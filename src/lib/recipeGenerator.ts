@@ -41,7 +41,6 @@ export function generateRecipe(
   const template = recipeTemplates[cuisine];
   const recipeName = template.names[Math.floor(Math.random() * template.names.length)];
   const cookingMethod = template.cooking[Math.floor(Math.random() * template.cooking.length)];
-  const base = template.bases[Math.floor(Math.random() * template.bases.length)];
 
   // Filter ingredients based on dietary restrictions
   let filteredIngredients = [...ingredients];
@@ -55,36 +54,46 @@ export function generateRecipe(
       i => !["bread", "pasta", "flour"].some(m => i.toLowerCase().includes(m))
     );
   }
+  if (dietary.includes("dairy-free")) {
+    filteredIngredients = filteredIngredients.filter(
+      i => !["milk", "cheese", "butter", "cream", "yogurt"].some(m => i.toLowerCase().includes(m))
+    );
+  }
+  if (dietary.includes("nut-free")) {
+    filteredIngredients = filteredIngredients.filter(
+      i => !["nut", "almond", "peanut", "cashew", "walnut"].some(m => i.toLowerCase().includes(m))
+    );
+  }
 
-  const mainIngredients = filteredIngredients.slice(0, Math.min(6, filteredIngredients.length));
+  // Only use the actual ingredients provided
+  const recipeIngredients = filteredIngredients.map(ing => `1 portion ${ing}`);
   
-  const recipeIngredients = [
-    `2 cups ${base}`,
-    ...mainIngredients.map(ing => `1 cup ${ing}`),
-    "2 tablespoons olive oil",
-    "Salt and pepper to taste",
-    "Fresh herbs for garnish",
-  ];
-
-  const instructions = [
-    `Prepare the ${base} according to package instructions.`,
-    `Heat olive oil in a large pan over medium heat.`,
-    `Add ${mainIngredients.slice(0, 2).join(" and ")} to the pan and cook for 5-7 minutes.`,
-    mainIngredients.length > 2 
-      ? `Add ${mainIngredients.slice(2).join(", ")} and continue cooking for another 5 minutes.`
-      : "Season with salt and pepper.",
-    `Combine everything with the prepared ${base}.`,
-    `Serve hot, garnished with fresh herbs.`,
-  ];
+  const instructions: string[] = [];
+  
+  if (filteredIngredients.length > 0) {
+    instructions.push(`Gather your ingredients: ${filteredIngredients.join(", ")}.`);
+    instructions.push(`${cookingMethod.charAt(0).toUpperCase() + cookingMethod.slice(1)} the ${filteredIngredients[0]} until ready.`);
+    
+    if (filteredIngredients.length > 1) {
+      instructions.push(`Prepare the ${filteredIngredients.slice(1).join(", ")} using your preferred ${cuisine} cooking technique.`);
+    }
+    
+    if (filteredIngredients.length > 2) {
+      instructions.push(`Combine all ingredients together in a ${cuisine}-style presentation.`);
+    }
+    
+    instructions.push(`Serve and enjoy your ${cuisine} creation!`);
+  }
 
   const dietaryTags = dietary.length > 0 ? ` (${dietary.join(", ")})` : "";
+  const ingredientList = filteredIngredients.slice(0, 3).join(", ");
 
   return {
     name: `${recipeName}${dietaryTags}`,
-    description: `A delicious ${cuisine} dish featuring ${mainIngredients.slice(0, 3).join(", ")} and more.`,
+    description: `A delicious ${cuisine} dish made with ${ingredientList}${filteredIngredients.length > 3 ? " and more" : ""}.`,
     cuisine: cuisine.charAt(0).toUpperCase() + cuisine.slice(1),
-    cookTime: "30-40 minutes",
-    servings: 4,
+    cookTime: "20-30 minutes",
+    servings: 2,
     ingredients: recipeIngredients,
     instructions,
   };
