@@ -65,24 +65,40 @@ export function generateRecipe(
     );
   }
 
-  // Only use the actual ingredients provided
-  const recipeIngredients = filteredIngredients.map(ing => `1 portion ${ing}`);
+  // Only use the actual ingredients provided with specific measurements
+  const measurements = ["1 cup", "2 cups", "1/2 cup", "3/4 cup", "1 lb", "8 oz", "2-3 pieces"];
+  const recipeIngredients = filteredIngredients.map(ing => {
+    const measurement = measurements[Math.floor(Math.random() * measurements.length)];
+    return `${measurement} ${ing}`;
+  });
   
   const instructions: string[] = [];
+  const temps = { baked: "375°F", roasted: "400°F", grilled: "medium-high heat", "sautéed": "medium heat", "stir-fried": "high heat", steamed: "boiling water" };
+  const temp = temps[cookingMethod as keyof typeof temps] || "medium heat";
   
   if (filteredIngredients.length > 0) {
-    instructions.push(`Gather your ingredients: ${filteredIngredients.join(", ")}.`);
-    instructions.push(`${cookingMethod.charAt(0).toUpperCase() + cookingMethod.slice(1)} the ${filteredIngredients[0]} until ready.`);
+    instructions.push(`Preheat your cooking surface to ${temp}.`);
+    
+    if (cookingMethod === "baked" || cookingMethod === "roasted") {
+      instructions.push(`${cookingMethod.charAt(0).toUpperCase() + cookingMethod.slice(1)} the ${filteredIngredients[0]} for 20-25 minutes, turning halfway through.`);
+    } else if (cookingMethod === "grilled") {
+      instructions.push(`Grill the ${filteredIngredients[0]} for 4-5 minutes per side until charred and cooked through.`);
+    } else if (cookingMethod === "sautéed" || cookingMethod === "stir-fried") {
+      instructions.push(`Heat a large pan and cook the ${filteredIngredients[0]} for 6-8 minutes, stirring occasionally.`);
+    } else {
+      instructions.push(`Cook the ${filteredIngredients[0]} for 8-10 minutes until tender.`);
+    }
     
     if (filteredIngredients.length > 1) {
-      instructions.push(`Prepare the ${filteredIngredients.slice(1).join(", ")} using your preferred ${cuisine} cooking technique.`);
+      instructions.push(`Add the ${filteredIngredients.slice(1, 3).join(" and ")} to the pan and cook for an additional 5-7 minutes.`);
     }
     
-    if (filteredIngredients.length > 2) {
-      instructions.push(`Combine all ingredients together in a ${cuisine}-style presentation.`);
+    if (filteredIngredients.length > 3) {
+      instructions.push(`Stir in the remaining ingredients (${filteredIngredients.slice(3).join(", ")}) and cook for 3-4 minutes until everything is heated through.`);
     }
     
-    instructions.push(`Serve and enjoy your ${cuisine} creation!`);
+    instructions.push(`Remove from heat and let rest for 2-3 minutes before serving.`);
+    instructions.push(`Serve hot and enjoy your ${cuisine}-inspired dish!`);
   }
 
   const dietaryTags = dietary.length > 0 ? ` (${dietary.join(", ")})` : "";
