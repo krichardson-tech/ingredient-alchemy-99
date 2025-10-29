@@ -106,14 +106,14 @@ const Index = () => {
         <header className="text-center space-y-2">
           <div className="flex items-center justify-center gap-2">
             <ChefHat className="w-10 h-10 text-primary" />
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground">Ingredient Alchemy</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif">Ingredient Alchemy</h1>
           </div>
           <p className="text-muted-foreground text-lg">Transform your ingredients into delicious recipes</p>
         </header>
 
         <div className="grid md:grid-cols-2 gap-8">
           <Card className="p-6 space-y-4">
-            <h2 className="text-2xl font-semibold flex items-center gap-2">
+            <h2 className="text-2xl font-semibold flex items-center gap-2 font-serif">
               <Plus className="w-6 h-6 text-primary" />
               Your Ingredients
             </h2>
@@ -149,7 +149,7 @@ const Index = () => {
           </Card>
 
           <Card className="p-6 space-y-4">
-            <h2 className="text-2xl font-semibold">Preferences</h2>
+            <h2 className="text-2xl font-semibold font-serif">Preferences</h2>
             
             <div className="space-y-3">
               <h3 className="font-medium text-sm text-muted-foreground">Dietary Restrictions</h3>
@@ -233,7 +233,7 @@ const Index = () => {
         {generatedRecipe && (
           <Card className="p-8 space-y-6 animate-in fade-in duration-500">
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold text-foreground">{generatedRecipe.name}</h2>
+              <h2 className="text-3xl font-bold text-foreground font-serif">{generatedRecipe.name}</h2>
               <p className="text-muted-foreground">{generatedRecipe.description}</p>
               <div className="flex gap-2 flex-wrap">
                 <Badge variant="outline">{generatedRecipe.cookTime}</Badge>
@@ -243,7 +243,7 @@ const Index = () => {
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xl font-semibold">Ingredients</h3>
+              <h3 className="text-xl font-semibold font-serif">Ingredients</h3>
               <ul className="list-disc list-inside space-y-1">
                 {generatedRecipe.ingredients.map((ing: string, i: number) => (
                   <li key={i} className="text-foreground/80">{ing}</li>
@@ -252,7 +252,7 @@ const Index = () => {
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xl font-semibold">Instructions</h3>
+              <h3 className="text-xl font-semibold font-serif">Instructions</h3>
               <ol className="list-decimal list-inside space-y-2">
                 {generatedRecipe.instructions.map((step: string, i: number) => (
                   <li key={i} className="text-foreground/80 leading-relaxed">{step}</li>
