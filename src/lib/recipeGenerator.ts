@@ -69,9 +69,19 @@ export function generateRecipe(
     );
   }
 
-  // Only use the actual ingredients provided with specific measurements
+  // Select a random subset of ingredients (3-6 ingredients or all if less than 3)
+  const numberOfIngredientsToUse = Math.min(
+    filteredIngredients.length,
+    Math.max(3, Math.floor(Math.random() * 4) + 3) // Random between 3-6
+  );
+  
+  // Shuffle and select random ingredients
+  const shuffled = [...filteredIngredients].sort(() => Math.random() - 0.5);
+  const selectedIngredients = shuffled.slice(0, numberOfIngredientsToUse);
+
+  // Only use the selected ingredients with specific measurements
   const measurements = ["1 cup", "2 cups", "1/2 cup", "3/4 cup", "1 lb", "8 oz", "2-3 pieces"];
-  const recipeIngredients = filteredIngredients.map(ing => {
+  const recipeIngredients = selectedIngredients.map(ing => {
     const measurement = measurements[Math.floor(Math.random() * measurements.length)];
     return `${measurement} ${ing}`;
   });
@@ -80,25 +90,25 @@ export function generateRecipe(
   const temps = { baked: "375°F", roasted: "400°F", grilled: "medium-high heat", "sautéed": "medium heat", "stir-fried": "high heat", steamed: "boiling water" };
   const temp = temps[cookingMethod as keyof typeof temps] || "medium heat";
   
-  if (filteredIngredients.length > 0) {
+  if (selectedIngredients.length > 0) {
     instructions.push(`Preheat your cooking surface to ${temp}.`);
     
     if (cookingMethod === "baked" || cookingMethod === "roasted") {
-      instructions.push(`${cookingMethod.charAt(0).toUpperCase() + cookingMethod.slice(1)} the ${filteredIngredients[0]} for 20-25 minutes, turning halfway through.`);
+      instructions.push(`${cookingMethod.charAt(0).toUpperCase() + cookingMethod.slice(1)} the ${selectedIngredients[0]} for 20-25 minutes, turning halfway through.`);
     } else if (cookingMethod === "grilled") {
-      instructions.push(`Grill the ${filteredIngredients[0]} for 4-5 minutes per side until charred and cooked through.`);
+      instructions.push(`Grill the ${selectedIngredients[0]} for 4-5 minutes per side until charred and cooked through.`);
     } else if (cookingMethod === "sautéed" || cookingMethod === "stir-fried") {
-      instructions.push(`Heat a large pan and cook the ${filteredIngredients[0]} for 6-8 minutes, stirring occasionally.`);
+      instructions.push(`Heat a large pan and cook the ${selectedIngredients[0]} for 6-8 minutes, stirring occasionally.`);
     } else {
-      instructions.push(`Cook the ${filteredIngredients[0]} for 8-10 minutes until tender.`);
+      instructions.push(`Cook the ${selectedIngredients[0]} for 8-10 minutes until tender.`);
     }
     
-    if (filteredIngredients.length > 1) {
-      instructions.push(`Add the ${filteredIngredients.slice(1, 3).join(" and ")} to the pan and cook for an additional 5-7 minutes.`);
+    if (selectedIngredients.length > 1) {
+      instructions.push(`Add the ${selectedIngredients.slice(1, 3).join(" and ")} to the pan and cook for an additional 5-7 minutes.`);
     }
     
-    if (filteredIngredients.length > 3) {
-      instructions.push(`Stir in the remaining ingredients (${filteredIngredients.slice(3).join(", ")}) and cook for 3-4 minutes until everything is heated through.`);
+    if (selectedIngredients.length > 3) {
+      instructions.push(`Stir in the remaining ingredients (${selectedIngredients.slice(3).join(", ")}) and cook for 3-4 minutes until everything is heated through.`);
     }
     
     instructions.push(`Remove from heat and let rest for 2-3 minutes before serving.`);
@@ -106,7 +116,7 @@ export function generateRecipe(
   }
 
   const dietaryTags = dietary.length > 0 ? ` (${dietary.join(", ")})` : "";
-  const ingredientList = filteredIngredients.slice(0, 3).join(", ");
+  const ingredientList = selectedIngredients.slice(0, 3).join(", ");
   
   // Build flavor description
   let flavorDescription = "";
@@ -120,7 +130,7 @@ export function generateRecipe(
 
   return {
     name: `${recipeName}${dietaryTags}`,
-    description: `A delicious ${cuisine} dish made with ${ingredientList}${filteredIngredients.length > 3 ? " and more" : ""}${flavorDescription}.`,
+    description: `A delicious ${cuisine} dish made with ${ingredientList}${selectedIngredients.length > 3 ? " and more" : ""}${flavorDescription}.`,
     cuisine: cuisine.charAt(0).toUpperCase() + cuisine.slice(1),
     cookTime: "20-30 minutes",
     servings: 2,
