@@ -1,5 +1,7 @@
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
 type CuisineType = "italian" | "asian" | "mexican" | "mediterranean" | "american";
+type FlavorPreference = "spicy" | "sweet" | "savory" | "tangy" | "mild" | "bold";
+type TasteSensation = "umami" | "salty" | "sour" | "bitter" | "sweet";
 
 const recipeTemplates = {
   italian: {
@@ -32,7 +34,9 @@ const recipeTemplates = {
 export function generateRecipe(
   ingredients: string[],
   dietary: DietaryRestriction[],
-  cuisines: CuisineType[]
+  cuisines: CuisineType[],
+  flavors: FlavorPreference[] = [],
+  tastes: TasteSensation[] = []
 ) {
   const cuisine = cuisines.length > 0 
     ? cuisines[Math.floor(Math.random() * cuisines.length)]
@@ -103,10 +107,20 @@ export function generateRecipe(
 
   const dietaryTags = dietary.length > 0 ? ` (${dietary.join(", ")})` : "";
   const ingredientList = filteredIngredients.slice(0, 3).join(", ");
+  
+  // Build flavor description
+  let flavorDescription = "";
+  if (flavors.length > 0) {
+    flavorDescription = ` with ${flavors.join(" and ")} notes`;
+  }
+  if (tastes.length > 0) {
+    const tasteDesc = tastes.length > 0 ? ` emphasizing ${tastes.join(", ")} flavors` : "";
+    flavorDescription += tasteDesc;
+  }
 
   return {
     name: `${recipeName}${dietaryTags}`,
-    description: `A delicious ${cuisine} dish made with ${ingredientList}${filteredIngredients.length > 3 ? " and more" : ""}.`,
+    description: `A delicious ${cuisine} dish made with ${ingredientList}${filteredIngredients.length > 3 ? " and more" : ""}${flavorDescription}.`,
     cuisine: cuisine.charAt(0).toUpperCase() + cuisine.slice(1),
     cookTime: "20-30 minutes",
     servings: 2,

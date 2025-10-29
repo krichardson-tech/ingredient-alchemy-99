@@ -11,12 +11,16 @@ import { generateRecipe } from "@/lib/recipeGenerator";
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
 type CuisineType = "italian" | "asian" | "mexican" | "mediterranean" | "american";
+type FlavorPreference = "spicy" | "sweet" | "savory" | "tangy" | "mild" | "bold";
+type TasteSensation = "umami" | "salty" | "sour" | "bitter" | "sweet";
 
 const Index = () => {
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [currentIngredient, setCurrentIngredient] = useState("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<DietaryRestriction[]>([]);
   const [cuisinePreferences, setCuisinePreferences] = useState<CuisineType[]>([]);
+  const [flavorPreferences, setFlavorPreferences] = useState<FlavorPreference[]>([]);
+  const [tasteSensations, setTasteSensations] = useState<TasteSensation[]>([]);
   const [generatedRecipe, setGeneratedRecipe] = useState<any>(null);
   const { toast } = useToast();
 
@@ -62,6 +66,22 @@ const Index = () => {
     );
   };
 
+  const toggleFlavor = (flavor: FlavorPreference) => {
+    setFlavorPreferences(prev =>
+      prev.includes(flavor)
+        ? prev.filter(f => f !== flavor)
+        : [...prev, flavor]
+    );
+  };
+
+  const toggleTaste = (taste: TasteSensation) => {
+    setTasteSensations(prev =>
+      prev.includes(taste)
+        ? prev.filter(t => t !== taste)
+        : [...prev, taste]
+    );
+  };
+
   const handleGenerateRecipe = () => {
     if (ingredients.length === 0) {
       toast({
@@ -72,7 +92,7 @@ const Index = () => {
       return;
     }
 
-    const recipe = generateRecipe(ingredients, dietaryRestrictions, cuisinePreferences);
+    const recipe = generateRecipe(ingredients, dietaryRestrictions, cuisinePreferences, flavorPreferences, tasteSensations);
     setGeneratedRecipe(recipe);
     toast({
       title: "Recipe generated!",
@@ -163,6 +183,38 @@ const Index = () => {
                       {cuisine}
                     </Label>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-medium text-sm text-muted-foreground">Flavor Preferences</h3>
+              <div className="flex flex-wrap gap-2">
+                {(["spicy", "sweet", "savory", "tangy", "mild", "bold"] as FlavorPreference[]).map((flavor) => (
+                  <Badge
+                    key={flavor}
+                    variant={flavorPreferences.includes(flavor) ? "default" : "outline"}
+                    className="cursor-pointer capitalize"
+                    onClick={() => toggleFlavor(flavor)}
+                  >
+                    {flavor}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-medium text-sm text-muted-foreground">Taste Sensations</h3>
+              <div className="flex flex-wrap gap-2">
+                {(["umami", "salty", "sour", "bitter", "sweet"] as TasteSensation[]).map((taste) => (
+                  <Badge
+                    key={taste}
+                    variant={tasteSensations.includes(taste) ? "default" : "outline"}
+                    className="cursor-pointer capitalize"
+                    onClick={() => toggleTaste(taste)}
+                  >
+                    {taste}
+                  </Badge>
                 ))}
               </div>
             </div>
