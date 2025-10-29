@@ -5,29 +5,29 @@ type TasteSensation = "umami" | "salty" | "sour" | "bitter" | "sweet";
 
 const recipeTemplates = {
   italian: {
-    names: ["Italian Pasta", "Rustic Italian Bowl", "Mediterranean Delight"],
+    names: ["Italian Pasta", "Rustic Italian Bowl", "Mediterranean Delight", "Italian Panini"],
     bases: ["pasta", "rice", "polenta"],
-    cooking: ["sautéed", "roasted", "grilled"],
+    cooking: ["sautéed", "roasted", "grilled", "assembled"],
   },
   asian: {
-    names: ["Asian Stir-Fry", "Oriental Bowl", "Fusion Delight"],
+    names: ["Asian Stir-Fry", "Oriental Bowl", "Fusion Delight", "Asian Wrap"],
     bases: ["rice", "noodles"],
-    cooking: ["stir-fried", "steamed", "sautéed"],
+    cooking: ["stir-fried", "steamed", "sautéed", "assembled"],
   },
   mexican: {
-    names: ["Mexican Fiesta", "Southwestern Bowl", "Tex-Mex Delight"],
+    names: ["Mexican Fiesta", "Southwestern Bowl", "Tex-Mex Delight", "Mexican Wrap", "Burrito Bowl"],
     bases: ["tortillas", "rice", "beans"],
-    cooking: ["grilled", "roasted", "sautéed"],
+    cooking: ["grilled", "roasted", "sautéed", "assembled"],
   },
   mediterranean: {
-    names: ["Mediterranean Bowl", "Greek-Inspired Dish", "Coastal Feast"],
+    names: ["Mediterranean Bowl", "Greek-Inspired Dish", "Coastal Feast", "Mediterranean Wrap"],
     bases: ["couscous", "rice", "quinoa"],
-    cooking: ["roasted", "grilled", "baked"],
+    cooking: ["roasted", "grilled", "baked", "assembled"],
   },
   american: {
-    names: ["Classic American", "Comfort Bowl", "Home-Style Dish"],
+    names: ["Classic American", "Comfort Bowl", "Home-Style Dish", "Classic Sandwich", "Deli-Style Sandwich", "Gourmet Sandwich"],
     bases: ["potatoes", "rice", "bread"],
-    cooking: ["roasted", "baked", "grilled"],
+    cooking: ["roasted", "baked", "grilled", "assembled"],
   },
 };
 
@@ -87,32 +87,50 @@ export function generateRecipe(
   });
   
   const instructions: string[] = [];
-  const temps = { baked: "375°F", roasted: "400°F", grilled: "medium-high heat", "sautéed": "medium heat", "stir-fried": "high heat", steamed: "boiling water" };
+  const temps = { baked: "375°F", roasted: "400°F", grilled: "medium-high heat", "sautéed": "medium heat", "stir-fried": "high heat", steamed: "boiling water", assembled: "room temperature" };
   const temp = temps[cookingMethod as keyof typeof temps] || "medium heat";
   
   if (selectedIngredients.length > 0) {
-    instructions.push(`Preheat your cooking surface to ${temp}.`);
-    
-    if (cookingMethod === "baked" || cookingMethod === "roasted") {
-      instructions.push(`${cookingMethod.charAt(0).toUpperCase() + cookingMethod.slice(1)} the ${selectedIngredients[0]} for 20-25 minutes, turning halfway through.`);
-    } else if (cookingMethod === "grilled") {
-      instructions.push(`Grill the ${selectedIngredients[0]} for 4-5 minutes per side until charred and cooked through.`);
-    } else if (cookingMethod === "sautéed" || cookingMethod === "stir-fried") {
-      instructions.push(`Heat a large pan and cook the ${selectedIngredients[0]} for 6-8 minutes, stirring occasionally.`);
+    if (cookingMethod === "assembled") {
+      // Sandwich/wrap assembly instructions
+      instructions.push(`Gather all your ingredients and prepare your workspace.`);
+      instructions.push(`Start with your base (bread, wrap, or tortilla) and layer the ${selectedIngredients[0]}.`);
+      
+      if (selectedIngredients.length > 1) {
+        instructions.push(`Add the ${selectedIngredients.slice(1, 3).join(" and ")} on top.`);
+      }
+      
+      if (selectedIngredients.length > 3) {
+        instructions.push(`Layer the remaining ingredients: ${selectedIngredients.slice(3).join(", ")}.`);
+      }
+      
+      instructions.push(`Season to taste and add any desired condiments.`);
+      instructions.push(`Close your sandwich/wrap and cut in half if desired. Serve immediately and enjoy!`);
     } else {
-      instructions.push(`Cook the ${selectedIngredients[0]} for 8-10 minutes until tender.`);
+      // Cooked dish instructions
+      instructions.push(`Preheat your cooking surface to ${temp}.`);
+      
+      if (cookingMethod === "baked" || cookingMethod === "roasted") {
+        instructions.push(`${cookingMethod.charAt(0).toUpperCase() + cookingMethod.slice(1)} the ${selectedIngredients[0]} for 20-25 minutes, turning halfway through.`);
+      } else if (cookingMethod === "grilled") {
+        instructions.push(`Grill the ${selectedIngredients[0]} for 4-5 minutes per side until charred and cooked through.`);
+      } else if (cookingMethod === "sautéed" || cookingMethod === "stir-fried") {
+        instructions.push(`Heat a large pan and cook the ${selectedIngredients[0]} for 6-8 minutes, stirring occasionally.`);
+      } else {
+        instructions.push(`Cook the ${selectedIngredients[0]} for 8-10 minutes until tender.`);
+      }
+      
+      if (selectedIngredients.length > 1) {
+        instructions.push(`Add the ${selectedIngredients.slice(1, 3).join(" and ")} to the pan and cook for an additional 5-7 minutes.`);
+      }
+      
+      if (selectedIngredients.length > 3) {
+        instructions.push(`Stir in the remaining ingredients (${selectedIngredients.slice(3).join(", ")}) and cook for 3-4 minutes until everything is heated through.`);
+      }
+      
+      instructions.push(`Remove from heat and let rest for 2-3 minutes before serving.`);
+      instructions.push(`Serve hot and enjoy your ${cuisine}-inspired dish!`);
     }
-    
-    if (selectedIngredients.length > 1) {
-      instructions.push(`Add the ${selectedIngredients.slice(1, 3).join(" and ")} to the pan and cook for an additional 5-7 minutes.`);
-    }
-    
-    if (selectedIngredients.length > 3) {
-      instructions.push(`Stir in the remaining ingredients (${selectedIngredients.slice(3).join(", ")}) and cook for 3-4 minutes until everything is heated through.`);
-    }
-    
-    instructions.push(`Remove from heat and let rest for 2-3 minutes before serving.`);
-    instructions.push(`Serve hot and enjoy your ${cuisine}-inspired dish!`);
   }
 
   const dietaryTags = dietary.length > 0 ? ` (${dietary.join(", ")})` : "";
