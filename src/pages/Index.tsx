@@ -5,9 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Plus, X, ChefHat, Sparkles } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { generateRecipe } from "@/lib/recipeGenerator";
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
 type CuisineType = "italian" | "asian" | "mexican" | "mediterranean" | "american";
@@ -22,6 +21,7 @@ const Index = () => {
   const [flavorPreferences, setFlavorPreferences] = useState<FlavorPreference[]>([]);
   const [tasteSensations, setTasteSensations] = useState<TasteSensation[]>([]);
   const [generatedRecipe, setGeneratedRecipe] = useState<any>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -82,7 +82,7 @@ const Index = () => {
     );
   };
 
-  const handleGenerateRecipe = () => {
+  const handleGenerateRecipe = async () => {
     if (ingredients.length === 0) {
       toast({
         title: "No ingredients",
@@ -92,12 +92,49 @@ const Index = () => {
       return;
     }
 
-    const recipe = generateRecipe(ingredients, dietaryRestrictions, cuisinePreferences, flavorPreferences, tasteSensations);
-    setGeneratedRecipe(recipe);
-    toast({
-      title: "Recipe generated!",
-      description: "Your custom recipe is ready.",
-    });
+    setIsGenerating(true);
+    setGeneratedRecipe(null);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-recipe`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ingredients,
+            dietaryRestrictions: dietaryRestrictions.map(d => 
+              d.charAt(0).toUpperCase() + d.slice(1).replace('-', ' ')
+            ),
+            cuisinePreference: cuisinePreferences[0] || '',
+            flavorPreferences,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate recipe');
+      }
+
+      const recipe = await response.json();
+      setGeneratedRecipe(recipe);
+      toast({
+        title: "Recipe generated!",
+        description: "Your custom recipe from Spoonacular is ready.",
+      });
+    } catch (error) {
+      console.error('Error generating recipe:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate recipe. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -223,30 +260,48 @@ const Index = () => {
               onClick={handleGenerateRecipe}
               className="w-full bg-primary hover:bg-primary/90"
               size="lg"
+              disabled={isGenerating}
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Generate Recipe
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Recipe
+                </>
+              )}
             </Button>
           </Card>
         </div>
 
         {generatedRecipe && (
           <Card className="p-8 space-y-6 animate-in fade-in duration-500">
+            {generatedRecipe.image && (
+              <img 
+                src={generatedRecipe.image} 
+                alt={generatedRecipe.name}
+                className="w-full h-64 object-cover rounded-lg"
+              />
+            )}
             <div className="space-y-2">
               <h2 className="text-3xl font-bold text-foreground font-serif">{generatedRecipe.name}</h2>
               <p className="text-muted-foreground">{generatedRecipe.description}</p>
               <div className="flex gap-2 flex-wrap">
-                <Badge variant="outline">{generatedRecipe.cookTime}</Badge>
-                <Badge variant="outline">{generatedRecipe.servings} servings</Badge>
-                {generatedRecipe.cuisine && <Badge className="bg-secondary">{generatedRecipe.cuisine}</Badge>}
+                {generatedRecipe.prepTime && <Badge variant="outline">{generatedRecipe.prepTime} mins</Badge>}
+                {generatedRecipe.servings && <Badge variant="outline">{generatedRecipe.servings} servings</Badge>}
               </div>
             </div>
 
             <div className="space-y-3">
               <h3 className="text-xl font-semibold font-serif">Ingredients</h3>
               <ul className="list-disc list-inside space-y-1">
-                {generatedRecipe.ingredients.map((ing: string, i: number) => (
-                  <li key={i} className="text-foreground/80">{ing}</li>
+                {generatedRecipe.ingredients.map((ing: any, i: number) => (
+                  <li key={i} className="text-foreground/80">
+                    {typeof ing === 'string' ? ing : `${ing.amount} ${ing.name}`}
+                  </li>
                 ))}
               </ul>
             </div>
