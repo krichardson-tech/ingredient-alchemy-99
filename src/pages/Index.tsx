@@ -21,6 +21,9 @@ const Index = () => {
   const [flavorPreferences, setFlavorPreferences] = useState<FlavorPreference[]>([]);
   const [tasteSensations, setTasteSensations] = useState<TasteSensation[]>([]);
   const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
+  const [allRecipes, setAllRecipes] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAllShownMessage, setShowAllShownMessage] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
@@ -92,8 +95,39 @@ const Index = () => {
       return;
     }
 
+    // If we have recipes cached and haven't shown them all yet, show next batch
+    if (allRecipes.length > 0 && currentIndex < allRecipes.length) {
+      const nextRecipes = allRecipes.slice(currentIndex, currentIndex + 3);
+      setGeneratedRecipes(nextRecipes);
+      setCurrentIndex(prev => prev + 3);
+      
+      if (currentIndex + 3 >= allRecipes.length) {
+        setShowAllShownMessage(true);
+      }
+      
+      toast({
+        title: "More recipes! 🎉",
+        description: `Showing ${nextRecipes.length} more delicious recipes`,
+      });
+      return;
+    }
+
+    // If we've shown all recipes, cycle back to the beginning
+    if (allRecipes.length > 0 && currentIndex >= allRecipes.length) {
+      setCurrentIndex(0);
+      setGeneratedRecipes(allRecipes.slice(0, 3));
+      setShowAllShownMessage(false);
+      toast({
+        title: "Starting over! 🔄",
+        description: "Showing recipes from the beginning",
+      });
+      return;
+    }
+
+    // Fetch new recipes from API
     setIsGenerating(true);
     setGeneratedRecipes([]);
+    setShowAllShownMessage(false);
 
     try {
       const response = await fetch(
@@ -120,10 +154,13 @@ const Index = () => {
       }
 
       const data = await response.json();
-      setGeneratedRecipes(data.recipes);
+      setAllRecipes(data.recipes);
+      setCurrentIndex(3);
+      setGeneratedRecipes(data.recipes.slice(0, 3));
+      
       toast({
         title: "Recipes generated! ✨",
-        description: `Here are ${data.recipes.length} delicious recipes for you!`,
+        description: `Found ${data.recipes.length} delicious recipes! Click again for more.`,
       });
     } catch (error) {
       console.error('Error generating recipe:', error);
@@ -291,6 +328,16 @@ const Index = () => {
 
         {generatedRecipes.length > 0 && (
           <div className="space-y-6">
+            {showAllShownMessage && (
+              <div className="text-center p-6 bg-accent/20 rounded-lg border-2 border-accent animate-fade-in">
+                <p className="text-2xl font-bold text-foreground font-serif flex items-center justify-center gap-2">
+                  <span className="text-3xl animate-wiggle">🎊</span>
+                  All Available Recipes Have Been Shown
+                  <span className="text-3xl animate-wiggle" style={{ animationDelay: '0.5s' }}>🎊</span>
+                </p>
+                <p className="text-muted-foreground mt-2">Click generate again to start over!</p>
+              </div>
+            )}
             <h2 className="text-3xl font-bold text-center text-foreground font-serif flex items-center justify-center gap-3">
               <span className="text-3xl animate-wiggle">🎉</span>
               Your Recipe Collection
