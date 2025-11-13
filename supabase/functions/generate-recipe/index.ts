@@ -62,25 +62,35 @@ serve(async (req) => {
       );
     }
 
-    // Get detailed information for the first recipe
-    const recipeId = recipes[0].id;
-    const detailUrl = new URL(`https://api.spoonacular.com/recipes/${recipeId}/information`);
-    detailUrl.searchParams.append('apiKey', SPOONACULAR_API_KEY);
-    detailUrl.searchParams.append('includeNutrition', 'false');
-
-    console.log('Getting recipe details for ID:', recipeId);
-
-    const detailResponse = await fetch(detailUrl.toString());
+    // Get detailed information for the first 3 recipes
+    const recipesToFetch = recipes.slice(0, 3);
     
-    if (!detailResponse.ok) {
-      console.error('Spoonacular detail error:', detailResponse.status, await detailResponse.text());
-      throw new Error(`Spoonacular API error: ${detailResponse.status}`);
+    const detailPromises = recipesToFetch.map(async (recipe: any) => {
+      const detailUrl = new URL(`https://api.spoonacular.com/recipes/${recipe.id}/information`);
+      detailUrl.searchParams.append('apiKey', SPOONACULAR_API_KEY);
+      detailUrl.searchParams.append('includeNutrition', 'false');
+
+      console.log('Getting recipe details for ID:', recipe.id);
+
+      const detailResponse = await fetch(detailUrl.toString());
+      
+      if (!detailResponse.ok) {
+        console.error('Spoonacular detail error:', detailResponse.status, await detailResponse.text());
+        return null;
+      }
+
+      return await detailResponse.json();
+    });
+
+    const recipeDetails = await Promise.all(detailPromises);
+    const validRecipes = recipeDetails.filter(detail => detail !== null);
+
+    if (validRecipes.length === 0) {
+      throw new Error('Failed to fetch recipe details');
     }
 
-    const recipeDetail = await detailResponse.json();
-
-    // Format the recipe
-    const formattedRecipe = {
+    // Format the recipes
+    const formattedRecipes = validRecipes.map((recipeDetail: any) => ({
       name: recipeDetail.title,
       description: recipeDetail.summary?.replace(/<[^>]*>/g, '') || 'A delicious recipe made with your ingredients.',
       ingredients: recipeDetail.extendedIngredients.map((ing: any) => ({
@@ -93,12 +103,12 @@ serve(async (req) => {
       prepTime: recipeDetail.readyInMinutes || 30,
       servings: recipeDetail.servings || 4,
       image: recipeDetail.image,
-    };
+    }));
 
-    console.log('Recipe generated successfully:', formattedRecipe.name);
+    console.log('Recipes generated successfully:', formattedRecipes.length);
 
     return new Response(
-      JSON.stringify(formattedRecipe),
+      JSON.stringify({ recipes: formattedRecipes }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
