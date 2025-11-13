@@ -141,16 +141,23 @@ const Index = () => {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <header className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-4xl animate-float">🧙‍♀️</span>
             <ChefHat className="w-10 h-10 text-primary" />
             <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif">Ingredient Alchemy</h1>
+            <span className="text-4xl animate-float" style={{ animationDelay: '1s' }}>✨</span>
           </div>
-          <p className="text-muted-foreground text-lg">Transform your ingredients into delicious recipes</p>
+          <p className="text-muted-foreground text-lg flex items-center justify-center gap-2">
+            <span className="animate-bounce-slow">🥘</span>
+            Transform your ingredients into delicious recipes
+            <span className="animate-bounce-slow" style={{ animationDelay: '0.5s' }}>🍳</span>
+          </p>
         </header>
 
         <div className="grid md:grid-cols-2 gap-8">
           <Card className="p-6 space-y-4">
             <h2 className="text-2xl font-semibold flex items-center gap-2 font-serif">
+              <span className="text-2xl animate-spin-slow">🥕</span>
               <Plus className="w-6 h-6 text-primary" />
               Your Ingredients
             </h2>
@@ -186,7 +193,10 @@ const Index = () => {
           </Card>
 
           <Card className="p-6 space-y-4">
-            <h2 className="text-2xl font-semibold font-serif">Preferences</h2>
+            <h2 className="text-2xl font-semibold font-serif flex items-center gap-2">
+              <span className="text-2xl animate-pulse-scale">⚙️</span>
+              Preferences
+            </h2>
             
             <div className="space-y-3">
               <h3 className="font-medium text-sm text-muted-foreground">Dietary Restrictions</h3>
@@ -264,11 +274,13 @@ const Index = () => {
             >
               {isGenerating ? (
                 <>
+                  <span className="text-lg mr-2 animate-spin-slow">🔮</span>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
+                  Generating Magic...
                 </>
               ) : (
                 <>
+                  <span className="text-lg mr-2">🪄</span>
                   <Sparkles className="w-4 h-4 mr-2" />
                   Generate Recipe
                 </>
@@ -279,7 +291,11 @@ const Index = () => {
 
         {generatedRecipes.length > 0 && (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-center text-foreground font-serif">Your Recipe Collection ✨</h2>
+            <h2 className="text-3xl font-bold text-center text-foreground font-serif flex items-center justify-center gap-3">
+              <span className="text-3xl animate-wiggle">🎉</span>
+              Your Recipe Collection
+              <span className="text-3xl animate-float">✨</span>
+            </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {generatedRecipes.map((recipe, idx) => (
                 <Card key={idx} className="overflow-hidden flex flex-col animate-in fade-in duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
@@ -308,7 +324,10 @@ const Index = () => {
                     </div>
 
                     <div className="space-y-2 flex-1">
-                      <h4 className="font-semibold text-sm font-serif">Ingredients</h4>
+                      <h4 className="font-semibold text-sm font-serif flex items-center gap-1">
+                        <span className="animate-bounce-slow">🥗</span>
+                        Ingredients
+                      </h4>
                       <ul className="text-xs space-y-1 max-h-32 overflow-y-auto text-muted-foreground">
                         {recipe.ingredients.slice(0, 6).map((ing: any, i: number) => (
                           <li key={i}>
@@ -322,7 +341,10 @@ const Index = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <h4 className="font-semibold text-sm font-serif">Instructions</h4>
+                      <h4 className="font-semibold text-sm font-serif flex items-center gap-1">
+                        <span className="animate-pulse-scale">👨‍🍳</span>
+                        Instructions
+                      </h4>
                       <ol className="text-xs space-y-1.5 max-h-40 overflow-y-auto text-muted-foreground">
                         {recipe.instructions.slice(0, 3).map((step: string, i: number) => (
                           <li key={i} className="leading-relaxed">
