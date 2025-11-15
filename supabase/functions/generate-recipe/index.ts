@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { ingredients, dietaryRestrictions, cuisinePreference, flavorPreferences } = await req.json();
+    const { ingredients, dietaryRestrictions, cuisinePreference, flavorPreferences, tasteSensations } = await req.json();
     const SPOONACULAR_API_KEY = Deno.env.get('SPOONACULAR_API_KEY');
 
     if (!SPOONACULAR_API_KEY) {
@@ -34,9 +34,17 @@ serve(async (req) => {
     const searchUrl = new URL('https://api.spoonacular.com/recipes/findByIngredients');
     searchUrl.searchParams.append('apiKey', SPOONACULAR_API_KEY);
     searchUrl.searchParams.append('ingredients', ingredientsQuery);
-    searchUrl.searchParams.append('number', '10');
+    searchUrl.searchParams.append('number', '15');
     searchUrl.searchParams.append('ranking', '2'); // Maximize used ingredients
     searchUrl.searchParams.append('ignorePantry', 'true');
+    
+    if (diet) {
+      searchUrl.searchParams.append('diet', diet);
+    }
+    
+    if (cuisinePreference && cuisinePreference.length > 0) {
+      searchUrl.searchParams.append('cuisine', cuisinePreference.join(','));
+    }
 
     console.log('Searching recipes:', searchUrl.toString().replace(SPOONACULAR_API_KEY, 'HIDDEN'));
 
@@ -63,7 +71,7 @@ serve(async (req) => {
     }
 
     // Get detailed information for all recipes
-    const recipesToFetch = recipes.slice(0, 10);
+    const recipesToFetch = recipes.slice(0, 12);
     
     const detailPromises = recipesToFetch.map(async (recipe: any) => {
       const detailUrl = new URL(`https://api.spoonacular.com/recipes/${recipe.id}/information`);

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,6 +26,8 @@ const Index = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAllShownMessage, setShowAllShownMessage] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedRecipeIndex, setSelectedRecipeIndex] = useState<number | null>(null);
+  const [servingSizes, setServingSizes] = useState<{ [key: number]: number }>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -142,8 +145,9 @@ const Index = () => {
             dietaryRestrictions: dietaryRestrictions.map(d => 
               d.charAt(0).toUpperCase() + d.slice(1).replace('-', ' ')
             ),
-            cuisinePreference: cuisinePreferences[0] || '',
+            cuisinePreference: cuisinePreferences,
             flavorPreferences,
+            tasteSensations,
           }),
         }
       );
@@ -157,6 +161,13 @@ const Index = () => {
       setAllRecipes(data.recipes);
       setCurrentIndex(3);
       setGeneratedRecipes(data.recipes.slice(0, 3));
+      
+      // Initialize serving sizes for new recipes
+      const initialServings: { [key: number]: number } = {};
+      data.recipes.forEach((recipe: any, idx: number) => {
+        initialServings[idx] = recipe.servings;
+      });
+      setServingSizes(initialServings);
       
       toast({
         title: "Recipes generated! ✨",
@@ -344,68 +355,125 @@ const Index = () => {
               <span className="text-3xl animate-float">✨</span>
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {generatedRecipes.map((recipe, idx) => (
-                <Card key={idx} className="overflow-hidden flex flex-col animate-in fade-in duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
-                  {recipe.image && (
-                    <img 
-                      src={recipe.image} 
-                      alt={recipe.name}
-                      className="w-full h-48 object-cover"
-                    />
-                  )}
-                  <div className="p-6 space-y-4 flex-1 flex flex-col">
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-bold text-foreground font-serif">{recipe.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{recipe.description}</p>
-                    </div>
-
-                    <div className="flex gap-4 text-sm">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        <span>{recipe.prepTime} mins</span>
+              {generatedRecipes.map((recipe, idx) => {
+                const recipeGlobalIndex = allRecipes.findIndex(r => r.name === recipe.name);
+                const isSelected = selectedRecipeIndex === recipeGlobalIndex;
+                const currentServings = servingSizes[recipeGlobalIndex] || recipe.servings;
+                const servingMultiplier = currentServings / recipe.servings;
+                
+                return (
+                  <Card 
+                    key={idx} 
+                    className={`overflow-hidden flex flex-col animate-in fade-in duration-500 cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary shadow-lg' : ''}`}
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                    onClick={() => setSelectedRecipeIndex(isSelected ? null : recipeGlobalIndex)}
+                  >
+                    {recipe.image && (
+                      <img 
+                        src={recipe.image} 
+                        alt={recipe.name}
+                        className="w-full h-48 object-cover"
+                      />
+                    )}
+                    <div className="p-6 space-y-4 flex-1 flex flex-col">
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-bold text-foreground font-serif">{recipe.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{recipe.description}</p>
                       </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        <span>{recipe.servings} servings</span>
+
+                      <div className="flex gap-4 text-sm items-center flex-wrap">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Clock className="w-4 h-4" />
+                          <span>{Math.round(recipe.prepTime * servingMultiplier)} mins</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Users className="w-4 h-4" />
+                          <span>{currentServings} servings</span>
+                        </div>
+                        {isSelected && (
+                          <Select
+                            value={currentServings.toString()}
+                            onValueChange={(value) => {
+                              setServingSizes(prev => ({
+                                ...prev,
+                                [recipeGlobalIndex]: parseInt(value)
+                              }));
+                            }}
+                          >
+                            <SelectTrigger className="w-20 h-7 text-xs" onClick={(e) => e.stopPropagation()}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[1, 2, 4, 6, 8, 10, 12].map(size => (
+                                <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
-                    </div>
 
-                    <div className="space-y-2 flex-1">
-                      <h4 className="font-semibold text-sm font-serif flex items-center gap-1">
-                        <span className="animate-bounce-slow">🥗</span>
-                        Ingredients
-                      </h4>
-                      <ul className="text-xs space-y-1 max-h-32 overflow-y-auto text-muted-foreground">
-                        {recipe.ingredients.slice(0, 6).map((ing: any, i: number) => (
-                          <li key={i}>
-                            • {typeof ing === 'string' ? ing : `${ing.amount} ${ing.name}`}
-                          </li>
-                        ))}
-                        {recipe.ingredients.length > 6 && (
-                          <li className="text-primary font-medium">+ {recipe.ingredients.length - 6} more...</li>
-                        )}
-                      </ul>
-                    </div>
+                      <div className="space-y-2 flex-1">
+                        <h4 className="font-semibold text-sm font-serif flex items-center gap-1">
+                          <span className="animate-bounce-slow">🥗</span>
+                          Ingredients
+                        </h4>
+                        <ul className="text-xs space-y-1 max-h-32 overflow-y-auto text-muted-foreground">
+                          {(isSelected ? recipe.ingredients : recipe.ingredients.slice(0, 6)).map((ing: any, i: number) => {
+                            const ingredientName = (typeof ing === 'string' ? ing : ing.name).toLowerCase();
+                            const hasIngredient = ingredients.some(userIng => 
+                              ingredientName.includes(userIng.toLowerCase()) || userIng.toLowerCase().includes(ingredientName)
+                            );
+                            
+                            let displayAmount = ing.amount;
+                            if (typeof ing === 'object' && ing.amount) {
+                              const numMatch = ing.amount.match(/[\d.]+/);
+                              if (numMatch) {
+                                const originalAmount = parseFloat(numMatch[0]);
+                                const adjustedAmount = (originalAmount * servingMultiplier).toFixed(1);
+                                displayAmount = ing.amount.replace(numMatch[0], adjustedAmount);
+                              }
+                            }
+                            
+                            return (
+                              <li key={i} className={!hasIngredient ? 'text-destructive font-semibold' : ''}>
+                                • {typeof ing === 'string' ? ing : `${displayAmount} ${ing.name}`}
+                              </li>
+                            );
+                          })}
+                          {!isSelected && recipe.ingredients.length > 6 && (
+                            <li className="text-primary font-medium">+ {recipe.ingredients.length - 6} more...</li>
+                          )}
+                        </ul>
+                      </div>
 
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm font-serif flex items-center gap-1">
-                        <span className="animate-pulse-scale">👨‍🍳</span>
-                        Instructions
-                      </h4>
-                      <ol className="text-xs space-y-1.5 max-h-40 overflow-y-auto text-muted-foreground">
-                        {recipe.instructions.slice(0, 3).map((step: string, i: number) => (
-                          <li key={i} className="leading-relaxed">
-                            <span className="font-semibold text-primary">{i + 1}.</span> {step}
-                          </li>
-                        ))}
-                        {recipe.instructions.length > 3 && (
-                          <li className="text-primary font-medium">+ {recipe.instructions.length - 3} more steps...</li>
-                        )}
-                      </ol>
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-sm font-serif flex items-center gap-1">
+                          <span className="animate-pulse-scale">👨‍🍳</span>
+                          Instructions
+                        </h4>
+                        <ol className="text-xs space-y-1.5 max-h-40 overflow-y-auto text-muted-foreground">
+                          {(isSelected ? recipe.instructions : recipe.instructions.slice(0, 3)).map((step: string, i: number) => {
+                            // Add space after periods if missing
+                            const formattedStep = step.replace(/\.([A-Z])/g, '. $1');
+                            return (
+                              <li key={i} className="leading-relaxed">
+                                <span className="font-semibold text-primary">{i + 1}. </span>{formattedStep}
+                              </li>
+                            );
+                          })}
+                          {!isSelected && recipe.instructions.length > 3 && (
+                            <li className="text-primary font-medium">+ {recipe.instructions.length - 3} more steps...</li>
+                          )}
+                        </ol>
+                      </div>
+                      
+                      {!isSelected && (
+                        <p className="text-xs text-center text-muted-foreground italic mt-2">Click to view full recipe</p>
+                      )}
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}
