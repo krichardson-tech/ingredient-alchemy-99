@@ -6,13 +6,46 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Pizza, Coffee, Fish } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
 type CuisineType = "italian" | "asian" | "mexican" | "mediterranean" | "american";
 type FlavorPreference = "spicy" | "sweet" | "savory" | "tangy" | "mild" | "bold";
 type TasteSensation = "umami" | "salty" | "sour" | "bitter" | "sweet";
+
+const ingredientPresets = [
+  {
+    name: "Quick Pasta Night",
+    icon: Pizza,
+    ingredients: ["pasta", "tomato sauce", "garlic", "olive oil", "basil", "parmesan cheese"],
+  },
+  {
+    name: "Sandwich Bar",
+    icon: Sandwich,
+    ingredients: ["bread", "lettuce", "tomato", "cheese", "deli meat", "mayo", "mustard"],
+  },
+  {
+    name: "Breakfast Basics",
+    icon: Coffee,
+    ingredients: ["eggs", "bread", "butter", "bacon", "milk", "cheese"],
+  },
+  {
+    name: "Stir Fry Station",
+    icon: UtensilsCrossed,
+    ingredients: ["rice", "soy sauce", "mixed vegetables", "chicken breast", "garlic", "ginger"],
+  },
+  {
+    name: "Taco Tuesday",
+    icon: UtensilsCrossed,
+    ingredients: ["tortillas", "ground beef", "lettuce", "cheese", "tomato", "salsa", "sour cream"],
+  },
+  {
+    name: "Fresh Salad Bowl",
+    icon: Salad,
+    ingredients: ["lettuce", "cucumber", "tomato", "carrots", "olive oil", "vinegar", "feta cheese"],
+  },
+];
 
 const Index = () => {
   const [ingredients, setIngredients] = useState<string[]>([]);
@@ -48,6 +81,15 @@ const Index = () => {
         description: `${currentIngredient} has been added to your pantry.`,
       });
     }
+  };
+
+  const loadPresetIngredients = (presetIngredients: string[], presetName: string) => {
+    setIngredients(presetIngredients);
+    localStorage.setItem("ingredients", JSON.stringify(presetIngredients));
+    toast({
+      title: "Preset loaded!",
+      description: `${presetName} ingredients have been added to your pantry.`,
+    });
   };
 
   const removeIngredient = (index: number) => {
@@ -201,6 +243,32 @@ const Index = () => {
             <span className="animate-bounce-slow" style={{ animationDelay: '0.5s' }}>🍳</span>
           </p>
         </header>
+
+        <Card className="p-6 border-accent/30">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="h-5 w-5 text-accent animate-pulse" />
+            <h2 className="text-2xl font-semibold text-accent">Quick Start Presets</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Click a preset to quickly fill your pantry with common meal ingredients
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {ingredientPresets.map((preset) => {
+              const IconComponent = preset.icon;
+              return (
+                <Button
+                  key={preset.name}
+                  variant="outline"
+                  className="h-auto p-4 flex flex-col items-center gap-2 hover:bg-accent/10 hover:border-accent/50 transition-all hover-scale"
+                  onClick={() => loadPresetIngredients(preset.ingredients, preset.name)}
+                >
+                  <IconComponent className="h-6 w-6 text-accent" />
+                  <span className="text-sm font-medium text-center">{preset.name}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </Card>
 
         <div className="grid md:grid-cols-2 gap-8">
           <Card className="p-6 space-y-4">
