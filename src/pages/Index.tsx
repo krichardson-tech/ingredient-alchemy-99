@@ -6,13 +6,31 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
 type CuisineType = "italian" | "asian" | "mexican" | "mediterranean" | "american";
 type FlavorPreference = "spicy" | "sweet" | "savory" | "tangy" | "mild" | "bold";
 type TasteSensation = "umami" | "salty" | "sour" | "bitter" | "sweet";
+
+const ingredientSubstitutions: { [key: string]: string[] } = {
+  "butter": ["margarine", "coconut oil", "olive oil", "ghee"],
+  "milk": ["almond milk", "soy milk", "oat milk", "coconut milk"],
+  "eggs": ["flax eggs", "chia eggs", "applesauce", "banana"],
+  "flour": ["almond flour", "coconut flour", "oat flour", "gluten-free flour"],
+  "sugar": ["honey", "maple syrup", "agave nectar", "stevia"],
+  "chicken": ["turkey", "tofu", "tempeh", "seitan"],
+  "beef": ["ground turkey", "lentils", "mushrooms", "plant-based meat"],
+  "cheese": ["nutritional yeast", "cashew cheese", "vegan cheese", "coconut cream"],
+  "cream": ["coconut cream", "cashew cream", "silken tofu", "greek yogurt"],
+  "yogurt": ["greek yogurt", "coconut yogurt", "sour cream", "buttermilk"],
+  "soy sauce": ["tamari", "coconut aminos", "worcestershire sauce", "liquid aminos"],
+  "bread": ["gluten-free bread", "lettuce wraps", "rice cakes", "tortillas"],
+  "pasta": ["zucchini noodles", "rice noodles", "gluten-free pasta", "spaghetti squash"],
+  "rice": ["cauliflower rice", "quinoa", "couscous", "bulgur"],
+  "oil": ["butter", "coconut oil", "avocado oil", "ghee"],
+};
 
 const ingredientPresets = [
   {
@@ -61,6 +79,8 @@ const Index = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedRecipeIndex, setSelectedRecipeIndex] = useState<number | null>(null);
   const [servingSizes, setServingSizes] = useState<{ [key: number]: number }>({});
+  const [ingredientSubstitutes, setIngredientSubstitutes] = useState<{ [recipeIndex: number]: { [ingredientIndex: number]: string } }>({});
+  const [showSubstituteFor, setShowSubstituteFor] = useState<{ recipeIndex: number; ingredientIndex: number } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -525,10 +545,88 @@ const Index = () => {
                                 displayAmount = ing.amount.replace(numMatch[0], adjustedAmount);
                               }
                             }
+
+                            // Check if this ingredient has substitutes
+                            const substitutionKey = Object.keys(ingredientSubstitutions).find(key => 
+                              ingredientName.includes(key.toLowerCase())
+                            );
+                            const hasSubstitutes = substitutionKey && isSelected;
+                            
+                            // Get the current substitute or original ingredient
+                            const currentSubstitute = ingredientSubstitutes[recipeGlobalIndex]?.[i];
+                            const displayIngredient = currentSubstitute || (typeof ing === 'string' ? ing : `${displayAmount} ${ing.name}`);
+                            
+                            const isShowingSubstitutes = showSubstituteFor?.recipeIndex === recipeGlobalIndex && showSubstituteFor?.ingredientIndex === i;
                             
                             return (
-                              <li key={i} className={!hasIngredient ? 'text-destructive font-semibold' : ''}>
-                                • {typeof ing === 'string' ? ing : `${displayAmount} ${ing.name}`}
+                              <li key={i} className={`${!hasIngredient ? 'text-destructive font-semibold' : ''} ${hasSubstitutes ? 'flex items-start gap-2' : ''}`}>
+                                <span className="flex-1">
+                                  • {displayIngredient}
+                                </span>
+                                {hasSubstitutes && (
+                                  <div className="relative">
+                                    <Repeat 
+                                      className="w-3 h-3 cursor-pointer text-accent hover:text-accent/80 flex-shrink-0 mt-0.5"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowSubstituteFor(
+                                          isShowingSubstitutes 
+                                            ? null 
+                                            : { recipeIndex: recipeGlobalIndex, ingredientIndex: i }
+                                        );
+                                      }}
+                                    />
+                                    {isShowingSubstitutes && (
+                                      <div 
+                                        className="absolute right-0 mt-1 bg-popover border border-border rounded-md shadow-lg p-2 z-50 min-w-[150px]"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <div className="text-xs font-semibold mb-1 text-foreground">Substitutes:</div>
+                                        <div className="space-y-1">
+                                          <button
+                                            className="block w-full text-left px-2 py-1 text-xs hover:bg-accent/10 rounded"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setIngredientSubstitutes(prev => {
+                                                const updated = { ...prev };
+                                                if (updated[recipeGlobalIndex]) {
+                                                  delete updated[recipeGlobalIndex][i];
+                                                }
+                                                return updated;
+                                              });
+                                              setShowSubstituteFor(null);
+                                            }}
+                                          >
+                                            ↻ Original: {typeof ing === 'string' ? ing : ing.name}
+                                          </button>
+                                          {ingredientSubstitutions[substitutionKey!].map((sub, subIdx) => (
+                                            <button
+                                              key={subIdx}
+                                              className="block w-full text-left px-2 py-1 text-xs hover:bg-accent/10 rounded"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIngredientSubstitutes(prev => ({
+                                                  ...prev,
+                                                  [recipeGlobalIndex]: {
+                                                    ...prev[recipeGlobalIndex],
+                                                    [i]: `${typeof ing === 'object' ? displayAmount : ''} ${sub}`.trim()
+                                                  }
+                                                }));
+                                                setShowSubstituteFor(null);
+                                                toast({
+                                                  title: "Substitute selected",
+                                                  description: `Switched to ${sub}`,
+                                                });
+                                              }}
+                                            >
+                                              {sub}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </li>
                             );
                           })}
