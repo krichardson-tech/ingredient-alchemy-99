@@ -550,7 +550,7 @@ const Index = () => {
                             const substitutionKey = Object.keys(ingredientSubstitutions).find(key => 
                               ingredientName.includes(key.toLowerCase())
                             );
-                            const hasSubstitutes = substitutionKey && isSelected;
+                            const hasSubstitutes = !!substitutionKey;
                             
                             // Get the current substitute or original ingredient
                             const currentSubstitute = ingredientSubstitutes[recipeGlobalIndex]?.[i];
