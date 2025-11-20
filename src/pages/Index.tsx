@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Pizza, Coffee, Fish } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Pizza, Coffee, Fish, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
@@ -96,6 +96,21 @@ const Index = () => {
     const updated = ingredients.filter((_, i) => i !== index);
     setIngredients(updated);
     localStorage.setItem("ingredients", JSON.stringify(updated));
+  };
+
+  const resetAll = () => {
+    setIngredients([]);
+    setGeneratedRecipes([]);
+    setAllRecipes([]);
+    setCurrentIndex(0);
+    setShowAllShownMessage(false);
+    setSelectedRecipeIndex(null);
+    setServingSizes({});
+    localStorage.removeItem("ingredients");
+    toast({
+      title: "Reset complete!",
+      description: "All ingredients and recipes have been cleared.",
+    });
   };
 
   const toggleDietaryRestriction = (restriction: DietaryRestriction) => {
@@ -230,7 +245,16 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        <header className="text-center space-y-2">
+        <header className="relative text-center space-y-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={resetAll}
+            className="absolute top-0 right-0 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
+            title="Reset all ingredients and recipes"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
           <div className="flex items-center justify-center gap-3">
             <span className="text-4xl animate-float">🧙‍♀️</span>
             <ChefHat className="w-10 h-10 text-primary" />
