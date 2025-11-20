@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Pizza, Coffee, Fish, RotateCcw } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
@@ -17,7 +17,7 @@ type TasteSensation = "umami" | "salty" | "sour" | "bitter" | "sweet";
 const ingredientPresets = [
   {
     name: "Quick Pasta Night",
-    icon: Pizza,
+    icon: Soup,
     ingredients: ["pasta", "tomato sauce", "garlic", "olive oil", "basil", "parmesan cheese"],
   },
   {
@@ -37,7 +37,7 @@ const ingredientPresets = [
   },
   {
     name: "Taco Tuesday",
-    icon: UtensilsCrossed,
+    icon: Shell,
     ingredients: ["tortillas", "ground beef", "lettuce", "cheese", "tomato", "salsa", "sour cream"],
   },
   {
