@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat, Heart, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
@@ -81,6 +81,10 @@ const Index = () => {
   const [servingSizes, setServingSizes] = useState<{ [key: number]: number }>({});
   const [ingredientSubstitutes, setIngredientSubstitutes] = useState<{ [recipeIndex: number]: { [ingredientIndex: number]: string } }>({});
   const [showSubstituteFor, setShowSubstituteFor] = useState<{ recipeIndex: number; ingredientIndex: number } | null>(null);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [shoppingList, setShoppingList] = useState<string[]>([]);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [showShoppingList, setShowShoppingList] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -88,7 +92,77 @@ const Index = () => {
     if (stored) {
       setIngredients(JSON.parse(stored));
     }
+    const storedFavorites = localStorage.getItem("favorites");
+    if (storedFavorites) {
+      setFavorites(JSON.parse(storedFavorites));
+    }
   }, []);
+
+  const toggleFavorite = (recipe: any) => {
+    const isFavorite = favorites.some(fav => fav.name === recipe.name);
+    let updated;
+    if (isFavorite) {
+      updated = favorites.filter(fav => fav.name !== recipe.name);
+      toast({
+        title: "Removed from favorites",
+        description: `${recipe.name} has been removed from your favorites.`,
+      });
+    } else {
+      updated = [...favorites, recipe];
+      toast({
+        title: "Added to favorites! ❤️",
+        description: `${recipe.name} has been saved to your favorites.`,
+      });
+    }
+    setFavorites(updated);
+    localStorage.setItem("favorites", JSON.stringify(updated));
+  };
+
+  const addToShoppingList = (recipe: any) => {
+    const missingIngredients = recipe.ingredients
+      .filter((ing: any) => {
+        const ingredientName = (typeof ing === 'string' ? ing : ing.name).toLowerCase();
+        return !ingredients.some(userIng => 
+          ingredientName.includes(userIng.toLowerCase()) || userIng.toLowerCase().includes(ingredientName)
+        );
+      })
+      .map((ing: any) => typeof ing === 'string' ? ing : `${ing.amount} ${ing.name}`);
+
+    if (missingIngredients.length === 0) {
+      toast({
+        title: "No missing ingredients",
+        description: "You already have all the ingredients for this recipe!",
+      });
+      return;
+    }
+
+    const newItems = missingIngredients.filter((item: string) => !shoppingList.includes(item));
+    if (newItems.length > 0) {
+      const updated = [...shoppingList, ...newItems];
+      setShoppingList(updated);
+      toast({
+        title: "Added to shopping list! 🛒",
+        description: `${newItems.length} missing ingredients added.`,
+      });
+    } else {
+      toast({
+        title: "Already in shopping list",
+        description: "These items are already in your shopping list.",
+      });
+    }
+  };
+
+  const removeFromShoppingList = (index: number) => {
+    setShoppingList(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearShoppingList = () => {
+    setShoppingList([]);
+    toast({
+      title: "Shopping list cleared",
+      description: "All items have been removed from your shopping list.",
+    });
+  };
 
   const addIngredient = () => {
     if (currentIngredient.trim()) {
@@ -266,15 +340,40 @@ const Index = () => {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <header className="relative text-center space-y-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={resetAll}
-            className="absolute top-0 right-0 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
-            title="Reset all ingredients and recipes"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
+          <div className="absolute top-0 right-0 flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowFavorites(!showFavorites)}
+              className="hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all"
+              title="View favorites"
+            >
+              <Heart className={`h-4 w-4 ${favorites.length > 0 ? 'fill-accent text-accent' : ''}`} />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowShoppingList(!showShoppingList)}
+              className="hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all relative"
+              title="View shopping list"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              {shoppingList.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  {shoppingList.length}
+                </span>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={resetAll}
+              className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
+              title="Reset all ingredients and recipes"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="flex items-center justify-center gap-3">
             <span className="text-4xl animate-float">🧙‍♀️</span>
             <ChefHat className="w-10 h-10 text-primary" />
@@ -449,6 +548,91 @@ const Index = () => {
           </Card>
         </div>
 
+        {showFavorites && (
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold flex items-center gap-2">
+                <Heart className="w-6 h-6 text-accent fill-accent" />
+                Your Favorites
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowFavorites(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            {favorites.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No favorites yet. Add some recipes to your favorites!</p>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {favorites.map((recipe, idx) => (
+                  <Card key={idx} className="p-4 space-y-2">
+                    <h3 className="font-bold">{recipe.name}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{recipe.description}</p>
+                    <div className="flex gap-2 text-xs">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {recipe.prepTime}m
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {recipe.servings}
+                      </div>
+                    </div>
+                    {recipe.nutrition && (
+                      <div className="text-xs text-muted-foreground">
+                        {recipe.nutrition.calories} cal • {recipe.nutrition.protein}g protein
+                      </div>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleFavorite(recipe)}
+                      className="w-full text-destructive hover:text-destructive"
+                    >
+                      Remove
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {showShoppingList && (
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold flex items-center gap-2">
+                <ShoppingCart className="w-6 h-6 text-accent" />
+                Shopping List
+              </h2>
+              <div className="flex gap-2">
+                {shoppingList.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={clearShoppingList}>
+                    Clear All
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => setShowShoppingList(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            {shoppingList.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">Your shopping list is empty. Select recipes to add missing ingredients!</p>
+            ) : (
+              <ul className="space-y-2">
+                {shoppingList.map((item, idx) => (
+                  <li key={idx} className="flex items-center justify-between p-3 bg-accent/10 rounded-lg">
+                    <span className="text-sm">{item}</span>
+                    <X
+                      className="w-4 h-4 cursor-pointer hover:text-destructive"
+                      onClick={() => removeFromShoppingList(idx)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        )}
+
         {generatedRecipes.length > 0 && (
           <div className="space-y-6">
             {showAllShownMessage && (
@@ -489,8 +673,50 @@ const Index = () => {
                     )}
                     <div className="p-6 space-y-4 flex-1 flex flex-col">
                       <div className="space-y-2">
-                        <h3 className="text-xl font-bold text-foreground font-serif">{recipe.name}</h3>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="text-xl font-bold text-foreground font-serif flex-1">{recipe.name}</h3>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(recipe);
+                              }}
+                            >
+                              <Heart className={`h-4 w-4 ${favorites.some(fav => fav.name === recipe.name) ? 'fill-accent text-accent' : ''}`} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addToShoppingList(recipe);
+                              }}
+                            >
+                              <ShoppingCart className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                         <p className="text-sm text-muted-foreground line-clamp-2">{recipe.description}</p>
+                        {recipe.nutrition && (
+                          <div className="flex flex-wrap gap-2 text-xs">
+                            <Badge variant="outline" className="gap-1">
+                              <span className="font-semibold">{recipe.nutrition.calories}</span> cal
+                            </Badge>
+                            <Badge variant="outline" className="gap-1">
+                              <span className="font-semibold">{recipe.nutrition.protein}g</span> protein
+                            </Badge>
+                            <Badge variant="outline" className="gap-1">
+                              <span className="font-semibold">{recipe.nutrition.carbs}g</span> carbs
+                            </Badge>
+                            <Badge variant="outline" className="gap-1">
+                              <span className="font-semibold">{recipe.nutrition.fat}g</span> fat
+                            </Badge>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex gap-4 text-sm items-center flex-wrap">
