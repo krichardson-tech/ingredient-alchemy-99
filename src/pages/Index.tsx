@@ -78,13 +78,14 @@ const Index = () => {
   const [showAllShownMessage, setShowAllShownMessage] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedRecipeIndex, setSelectedRecipeIndex] = useState<number | null>(null);
-  const [servingSizes, setServingSizes] = useState<{ [key: number]: number }>({});
-  const [ingredientSubstitutes, setIngredientSubstitutes] = useState<{ [recipeIndex: number]: { [ingredientIndex: number]: string } }>({});
-  const [showSubstituteFor, setShowSubstituteFor] = useState<{ recipeIndex: number; ingredientIndex: number } | null>(null);
+  const [servingSizes, setServingSizes] = useState<{ [key: string | number]: number }>({});
+  const [ingredientSubstitutes, setIngredientSubstitutes] = useState<{ [recipeIndex: string | number]: { [ingredientIndex: number]: string } }>({});
+  const [showSubstituteFor, setShowSubstituteFor] = useState<{ recipeIndex: string | number; ingredientIndex: number } | null>(null);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [shoppingList, setShoppingList] = useState<string[]>([]);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showShoppingList, setShowShoppingList] = useState(false);
+  const [selectedFavoriteIndex, setSelectedFavoriteIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -562,36 +563,229 @@ const Index = () => {
             {favorites.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No favorites yet. Add some recipes to your favorites!</p>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {favorites.map((recipe, idx) => (
-                  <Card key={idx} className="p-4 space-y-2">
-                    <h3 className="font-bold">{recipe.name}</h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{recipe.description}</p>
-                    <div className="flex gap-2 text-xs">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {recipe.prepTime}m
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        {recipe.servings}
-                      </div>
-                    </div>
-                    {recipe.nutrition && (
-                      <div className="text-xs text-muted-foreground">
-                        {recipe.nutrition.calories} cal • {recipe.nutrition.protein}g protein
-                      </div>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleFavorite(recipe)}
-                      className="w-full text-destructive hover:text-destructive"
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {favorites.map((recipe, idx) => {
+                  const isSelected = selectedFavoriteIndex === idx;
+                  const currentServings = servingSizes[`fav_${idx}`] || recipe.servings;
+                  const servingMultiplier = currentServings / recipe.servings;
+                  
+                  return (
+                    <Card 
+                      key={idx} 
+                      className={`overflow-hidden flex flex-col cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary shadow-lg' : ''}`}
+                      onClick={() => setSelectedFavoriteIndex(isSelected ? null : idx)}
                     >
-                      Remove
-                    </Button>
-                  </Card>
-                ))}
+                      {recipe.image && (
+                        <img 
+                          src={recipe.image} 
+                          alt={recipe.name}
+                          className="w-full h-48 object-cover"
+                        />
+                      )}
+                      <div className="p-6 space-y-4 flex-1 flex flex-col">
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="text-xl font-bold text-foreground font-serif flex-1">{recipe.name}</h3>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(recipe);
+                              }}
+                            >
+                              <Heart className="h-4 w-4 fill-accent text-accent" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-2">{recipe.description}</p>
+                          {recipe.nutrition && (
+                            <div className="flex flex-wrap gap-2 text-xs">
+                              <Badge variant="outline" className="gap-1">
+                                <span className="font-semibold">{recipe.nutrition.calories}</span> cal
+                              </Badge>
+                              <Badge variant="outline" className="gap-1">
+                                <span className="font-semibold">{recipe.nutrition.protein}g</span> protein
+                              </Badge>
+                              <Badge variant="outline" className="gap-1">
+                                <span className="font-semibold">{recipe.nutrition.carbs}g</span> carbs
+                              </Badge>
+                              <Badge variant="outline" className="gap-1">
+                                <span className="font-semibold">{recipe.nutrition.fat}g</span> fat
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-4 text-sm items-center flex-wrap">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Clock className="w-4 h-4" />
+                            <span>{Math.round(recipe.prepTime * servingMultiplier)} mins</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Users className="w-4 h-4" />
+                            <span>{currentServings} servings</span>
+                          </div>
+                          {isSelected && (
+                            <Select
+                              value={currentServings.toString()}
+                              onValueChange={(value) => {
+                                setServingSizes(prev => ({
+                                  ...prev,
+                                  [`fav_${idx}`]: parseInt(value)
+                                }));
+                              }}
+                            >
+                              <SelectTrigger className="w-20 h-7 text-xs" onClick={(e) => e.stopPropagation()}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 2, 4, 6, 8, 10, 12].map(size => (
+                                  <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+
+                        <div className="space-y-2 flex-1">
+                          <h4 className="font-semibold text-sm font-serif flex items-center gap-1">
+                            <span className="animate-bounce-slow">🥗</span>
+                            Ingredients
+                          </h4>
+                          <ul className="text-xs space-y-1 max-h-32 overflow-y-auto text-muted-foreground">
+                            {(isSelected ? recipe.ingredients : recipe.ingredients.slice(0, 6)).map((ing: any, i: number) => {
+                              const ingredientName = (typeof ing === 'string' ? ing : ing.name).toLowerCase();
+                              const hasIngredient = ingredients.some(userIng => 
+                                ingredientName.includes(userIng.toLowerCase()) || userIng.toLowerCase().includes(ingredientName)
+                              );
+                              
+                              let displayAmount = ing.amount;
+                              if (typeof ing === 'object' && ing.amount) {
+                                const numMatch = ing.amount.match(/[\d.]+/);
+                                if (numMatch) {
+                                  const originalAmount = parseFloat(numMatch[0]);
+                                  const adjustedAmount = (originalAmount * servingMultiplier).toFixed(1);
+                                  displayAmount = ing.amount.replace(numMatch[0], adjustedAmount);
+                                }
+                              }
+
+                              const substitutionKey = Object.keys(ingredientSubstitutions).find(key => 
+                                ingredientName.includes(key.toLowerCase())
+                              );
+                              const hasSubstitutes = !!substitutionKey;
+                              
+                              const favKey = `fav_${idx}`;
+                              const currentSubstitute = ingredientSubstitutes[favKey]?.[i];
+                              const displayIngredient = currentSubstitute || (typeof ing === 'string' ? ing : `${displayAmount} ${ing.name}`);
+                              
+                              const isShowingSubstitutes = showSubstituteFor?.recipeIndex === favKey && showSubstituteFor?.ingredientIndex === i;
+                              
+                              return (
+                                <li key={i} className={`${!hasIngredient ? 'text-destructive font-semibold' : ''} ${hasSubstitutes ? 'flex items-start gap-2' : ''}`}>
+                                  <span className="flex-1">
+                                    • {displayIngredient}
+                                  </span>
+                                  {hasSubstitutes && (
+                                    <div className="relative">
+                                      <Repeat 
+                                        className="w-3 h-3 cursor-pointer text-accent hover:text-accent/80 flex-shrink-0 mt-0.5"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setShowSubstituteFor(
+                                            isShowingSubstitutes 
+                                              ? null 
+                                              : { recipeIndex: favKey, ingredientIndex: i }
+                                          );
+                                        }}
+                                      />
+                                      {isShowingSubstitutes && (
+                                        <div 
+                                          className="absolute right-0 mt-1 bg-popover border border-border rounded-md shadow-lg p-2 z-50 min-w-[150px]"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <div className="text-xs font-semibold mb-1 text-foreground">Substitutes:</div>
+                                          <div className="space-y-1">
+                                            <button
+                                              className="block w-full text-left px-2 py-1 text-xs hover:bg-accent/10 rounded"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIngredientSubstitutes(prev => {
+                                                  const updated = { ...prev };
+                                                  if (updated[favKey]) {
+                                                    delete updated[favKey][i];
+                                                  }
+                                                  return updated;
+                                                });
+                                                setShowSubstituteFor(null);
+                                              }}
+                                            >
+                                              ↻ Original: {typeof ing === 'string' ? ing : ing.name}
+                                            </button>
+                                            {ingredientSubstitutions[substitutionKey!].map((sub, subIdx) => (
+                                              <button
+                                                key={subIdx}
+                                                className="block w-full text-left px-2 py-1 text-xs hover:bg-accent/10 rounded"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setIngredientSubstitutes(prev => ({
+                                                    ...prev,
+                                                    [favKey]: {
+                                                      ...prev[favKey],
+                                                      [i]: `${typeof ing === 'object' ? displayAmount : ''} ${sub}`.trim()
+                                                    }
+                                                  }));
+                                                  setShowSubstituteFor(null);
+                                                  toast({
+                                                    title: "Substitute selected",
+                                                    description: `Switched to ${sub}`,
+                                                  });
+                                                }}
+                                              >
+                                                {sub}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </li>
+                              );
+                            })}
+                            {!isSelected && recipe.ingredients.length > 6 && (
+                              <li className="text-primary font-medium">+ {recipe.ingredients.length - 6} more...</li>
+                            )}
+                          </ul>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-sm font-serif flex items-center gap-1">
+                            <span className="animate-pulse-scale">👨‍🍳</span>
+                            Instructions
+                          </h4>
+                          <ol className="text-xs space-y-1.5 max-h-40 overflow-y-auto text-muted-foreground">
+                            {(isSelected ? recipe.instructions : recipe.instructions.slice(0, 3)).map((step: string, i: number) => {
+                              const formattedStep = step.replace(/\.([A-Z])/g, '. $1');
+                              return (
+                                <li key={i} className="leading-relaxed">
+                                  <span className="font-semibold text-primary">{i + 1}. </span>{formattedStep}
+                                </li>
+                              );
+                            })}
+                            {!isSelected && recipe.instructions.length > 3 && (
+                              <li className="text-primary font-medium">+ {recipe.instructions.length - 3} more steps...</li>
+                            )}
+                          </ol>
+                        </div>
+                        
+                        {!isSelected && (
+                          <p className="text-xs text-center text-muted-foreground italic mt-2">Click to view full recipe</p>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </Card>
