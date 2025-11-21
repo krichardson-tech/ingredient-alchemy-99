@@ -76,7 +76,7 @@ serve(async (req) => {
     const detailPromises = recipesToFetch.map(async (recipe: any) => {
       const detailUrl = new URL(`https://api.spoonacular.com/recipes/${recipe.id}/information`);
       detailUrl.searchParams.append('apiKey', SPOONACULAR_API_KEY);
-      detailUrl.searchParams.append('includeNutrition', 'false');
+      detailUrl.searchParams.append('includeNutrition', 'true');
 
       console.log('Getting recipe details for ID:', recipe.id);
 
@@ -98,20 +98,34 @@ serve(async (req) => {
     }
 
     // Format the recipes
-    const formattedRecipes = validRecipes.map((recipeDetail: any) => ({
-      name: recipeDetail.title,
-      description: recipeDetail.summary?.replace(/<[^>]*>/g, '') || 'A delicious recipe made with your ingredients.',
-      ingredients: recipeDetail.extendedIngredients.map((ing: any) => ({
-        name: ing.name,
-        amount: `${ing.amount} ${ing.unit}`,
-      })),
-      instructions: recipeDetail.analyzedInstructions?.[0]?.steps?.map((step: any) => 
-        step.step
-      ) || [recipeDetail.instructions?.replace(/<[^>]*>/g, '') || 'Follow standard cooking procedures.'],
-      prepTime: recipeDetail.readyInMinutes || 30,
-      servings: recipeDetail.servings || 4,
-      image: recipeDetail.image,
-    }));
+    const formattedRecipes = validRecipes.map((recipeDetail: any) => {
+      const nutrition = recipeDetail.nutrition?.nutrients;
+      const getNutrient = (name: string) => {
+        const nutrient = nutrition?.find((n: any) => n.name === name);
+        return nutrient ? Math.round(nutrient.amount) : 0;
+      };
+
+      return {
+        name: recipeDetail.title,
+        description: recipeDetail.summary?.replace(/<[^>]*>/g, '') || 'A delicious recipe made with your ingredients.',
+        ingredients: recipeDetail.extendedIngredients.map((ing: any) => ({
+          name: ing.name,
+          amount: `${ing.amount} ${ing.unit}`,
+        })),
+        instructions: recipeDetail.analyzedInstructions?.[0]?.steps?.map((step: any) => 
+          step.step
+        ) || [recipeDetail.instructions?.replace(/<[^>]*>/g, '') || 'Follow standard cooking procedures.'],
+        prepTime: recipeDetail.readyInMinutes || 30,
+        servings: recipeDetail.servings || 4,
+        image: recipeDetail.image,
+        nutrition: {
+          calories: getNutrient('Calories'),
+          protein: getNutrient('Protein'),
+          carbs: getNutrient('Carbohydrates'),
+          fat: getNutrient('Fat'),
+        },
+      };
+    });
 
     console.log('Recipes generated successfully:', formattedRecipes.length);
 
