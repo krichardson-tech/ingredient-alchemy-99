@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -86,6 +86,8 @@ const Index = () => {
   const [showFavorites, setShowFavorites] = useState(false);
   const [showShoppingList, setShowShoppingList] = useState(false);
   const [selectedFavoriteIndex, setSelectedFavoriteIndex] = useState<number | null>(null);
+  const favoritesRef = useRef<HTMLDivElement>(null);
+  const shoppingListRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -345,7 +347,14 @@ const Index = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setShowFavorites(!showFavorites)}
+              onClick={() => {
+                setShowFavorites(!showFavorites);
+                if (!showFavorites) {
+                  setTimeout(() => {
+                    favoritesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }
+              }}
               className="hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all"
               title="View favorites"
             >
@@ -354,7 +363,14 @@ const Index = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setShowShoppingList(!showShoppingList)}
+              onClick={() => {
+                setShowShoppingList(!showShoppingList);
+                if (!showShoppingList) {
+                  setTimeout(() => {
+                    shoppingListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }
+              }}
               className="hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all relative"
               title="View shopping list"
             >
@@ -550,7 +566,7 @@ const Index = () => {
         </div>
 
         {showFavorites && (
-          <Card className="p-6 space-y-4">
+          <Card ref={favoritesRef} className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
                 <Heart className="w-6 h-6 text-accent fill-accent" />
@@ -792,7 +808,7 @@ const Index = () => {
         )}
 
         {showShoppingList && (
-          <Card className="p-6 space-y-4">
+          <Card ref={shoppingListRef} className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
                 <ShoppingCart className="w-6 h-6 text-accent" />
