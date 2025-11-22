@@ -65,6 +65,47 @@ const ingredientPresets = [
   },
 ];
 
+const decimalToFraction = (decimal: number): string => {
+  const tolerance = 0.01;
+  const whole = Math.floor(decimal);
+  const fractionalPart = decimal - whole;
+  
+  if (fractionalPart < tolerance) {
+    return whole.toString();
+  }
+  
+  // Common fractions
+  const fractions: [number, string][] = [
+    [0.125, '1/8'],
+    [0.25, '1/4'],
+    [0.333, '1/3'],
+    [0.375, '3/8'],
+    [0.5, '1/2'],
+    [0.625, '5/8'],
+    [0.666, '2/3'],
+    [0.75, '3/4'],
+    [0.875, '7/8'],
+  ];
+  
+  for (const [value, fraction] of fractions) {
+    if (Math.abs(fractionalPart - value) < tolerance) {
+      return whole > 0 ? `${whole} ${fraction}` : fraction;
+    }
+  }
+  
+  // For other decimals, use simple fraction approximation
+  const denominators = [2, 3, 4, 5, 8];
+  for (const denom of denominators) {
+    const numer = Math.round(fractionalPart * denom);
+    if (Math.abs(numer / denom - fractionalPart) < tolerance) {
+      return whole > 0 ? `${whole} ${numer}/${denom}` : `${numer}/${denom}`;
+    }
+  }
+  
+  // Fallback to one decimal place
+  return decimal.toFixed(1);
+};
+
 const Index = () => {
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [currentIngredient, setCurrentIngredient] = useState("");
@@ -681,7 +722,7 @@ const Index = () => {
                                 const numMatch = ing.amount.match(/[\d.]+/);
                                 if (numMatch) {
                                   const originalAmount = parseFloat(numMatch[0]);
-                                  const adjustedAmount = (originalAmount * servingMultiplier).toFixed(1);
+                                  const adjustedAmount = decimalToFraction(originalAmount * servingMultiplier);
                                   displayAmount = ing.amount.replace(numMatch[0], adjustedAmount);
                                 }
                               }
@@ -977,7 +1018,7 @@ const Index = () => {
                               const numMatch = ing.amount.match(/[\d.]+/);
                               if (numMatch) {
                                 const originalAmount = parseFloat(numMatch[0]);
-                                const adjustedAmount = (originalAmount * servingMultiplier).toFixed(1);
+                                const adjustedAmount = decimalToFraction(originalAmount * servingMultiplier);
                                 displayAmount = ing.amount.replace(numMatch[0], adjustedAmount);
                               }
                             }
