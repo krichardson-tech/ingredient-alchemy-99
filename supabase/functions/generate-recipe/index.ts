@@ -55,7 +55,21 @@ serve(async (req) => {
     const searchResponse = await fetch(searchUrl.toString());
     
     if (!searchResponse.ok) {
-      console.error('Spoonacular search error:', searchResponse.status, await searchResponse.text());
+      const errorText = await searchResponse.text();
+      console.error('Spoonacular search error:', searchResponse.status, errorText);
+      
+      if (searchResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Recipe API daily limit reached. Please try again tomorrow or contact support to upgrade your plan.' 
+          }),
+          { 
+            status: 402, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
       throw new Error(`Spoonacular API error: ${searchResponse.status}`);
     }
 
@@ -63,9 +77,22 @@ serve(async (req) => {
     console.log('Found recipes:', recipes.length);
 
     if (!recipes || recipes.length === 0) {
+      // Build a helpful error message based on user's selections
+      let errorMessage = 'No recipes found with those ingredients';
+      
+      if (mealType && mealType.length > 0) {
+        errorMessage += ` for ${mealType.join(', ')}`;
+      }
+      
+      if (dietaryRestrictions && dietaryRestrictions.length > 0) {
+        errorMessage += ` with ${dietaryRestrictions.join(', ')} restrictions`;
+      }
+      
+      errorMessage += '. Try adjusting your ingredients, meal type, or dietary preferences.';
+      
       return new Response(
         JSON.stringify({ 
-          error: 'No recipes found with those ingredients. Try different ingredients!' 
+          error: errorMessage
         }),
         { 
           status: 404, 
@@ -87,7 +114,14 @@ serve(async (req) => {
       const detailResponse = await fetch(detailUrl.toString());
       
       if (!detailResponse.ok) {
-        console.error('Spoonacular detail error:', detailResponse.status, await detailResponse.text());
+        const errorText = await detailResponse.text();
+        console.error('Spoonacular detail error:', detailResponse.status, errorText);
+        
+        // If we hit quota limit on detail fetches, just skip this recipe
+        if (detailResponse.status === 402) {
+          return null;
+        }
+        
         return null;
       }
 

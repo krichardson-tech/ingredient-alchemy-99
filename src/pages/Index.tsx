@@ -379,6 +379,29 @@ const Index = () => {
 
       if (!response.ok) {
         const error = await response.json();
+        
+        // Handle quota limit error specifically
+        if (response.status === 402) {
+          toast({
+            title: "API Limit Reached",
+            description: error.error || "The recipe API daily limit has been reached. Please try again tomorrow.",
+            variant: "destructive",
+          });
+          setIsGenerating(false);
+          return;
+        }
+        
+        // Handle no recipes found
+        if (response.status === 404) {
+          toast({
+            title: "No Recipes Found",
+            description: error.error || "No recipes match your current preferences and ingredients.",
+            variant: "destructive",
+          });
+          setIsGenerating(false);
+          return;
+        }
+        
         throw new Error(error.error || 'Failed to generate recipes');
       }
 
