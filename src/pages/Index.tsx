@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat, Heart, ShoppingCart } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat, Heart, ShoppingCart, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
@@ -133,6 +133,7 @@ const Index = () => {
   const [showSubstituteFor, setShowSubstituteFor] = useState<{ recipeIndex: string | number; ingredientIndex: number } | null>(null);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [shoppingList, setShoppingList] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [showShoppingList, setShowShoppingList] = useState(false);
   const [selectedFavoriteIndex, setSelectedFavoriteIndex] = useState<number | null>(null);
@@ -290,6 +291,24 @@ const Index = () => {
         ? prev.filter(t => t !== taste)
         : [...prev, taste]
     );
+  };
+
+  const filterRecipesBySearch = (recipes: any[]) => {
+    if (!searchQuery.trim()) return recipes;
+    
+    const query = searchQuery.toLowerCase();
+    return recipes.filter(recipe => {
+      // Search in recipe name
+      if (recipe.name.toLowerCase().includes(query)) return true;
+      
+      // Search in ingredients
+      const hasIngredient = recipe.ingredients?.some((ing: any) => 
+        ing.name.toLowerCase().includes(query)
+      );
+      if (hasIngredient) return true;
+      
+      return false;
+    });
   };
 
   const handleGenerateRecipe = async () => {
@@ -689,15 +708,34 @@ const Index = () => {
                 <Heart className="w-6 h-6 text-accent fill-accent" />
                 Your Favorites
               </h2>
-              <Button variant="ghost" size="sm" onClick={() => setShowFavorites(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            {favorites.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No favorites yet. Add some recipes to your favorites!</p>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {favorites.map((recipe, idx) => {
+            <Button variant="ghost" size="sm" onClick={() => setShowFavorites(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Search Input for Favorites */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
+            <Input
+              type="text"
+              placeholder="Search favorite recipes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          {favorites.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No favorites yet. Add some recipes to your favorites!</p>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filterRecipesBySearch(favorites).length === 0 && searchQuery ? (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <p className="text-lg">No favorite recipes found matching "{searchQuery}"</p>
+                  <p className="text-sm mt-2">Try searching with different keywords</p>
+                </div>
+              ) : (
+                filterRecipesBySearch(favorites).map((recipe, idx) => {
                   const isSelected = selectedFavoriteIndex === idx;
                   const currentServings = servingSizes[`fav_${idx}`] || recipe.servings;
                   const servingMultiplier = currentServings / recipe.servings;
@@ -916,11 +954,12 @@ const Index = () => {
                           <p className="text-xs text-center text-muted-foreground italic mt-2">Click to view full recipe</p>
                         )}
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
+                  </Card>
+                );
+              })
             )}
+          </div>
+        )}
           </Card>
         )}
 
@@ -977,8 +1016,27 @@ const Index = () => {
               Your Recipe Collection
               <span className="text-3xl animate-float">✨</span>
             </h2>
+            
+            {/* Search Input */}
+            <div className="relative max-w-md mx-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
+              <Input
+                type="text"
+                placeholder="Search recipes by name or ingredient..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {generatedRecipes.map((recipe, idx) => {
+              {filterRecipesBySearch(generatedRecipes).length === 0 && searchQuery ? (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <p className="text-lg">No recipes found matching "{searchQuery}"</p>
+                  <p className="text-sm mt-2">Try searching with different keywords</p>
+                </div>
+              ) : (
+                filterRecipesBySearch(generatedRecipes).map((recipe, idx) => {
                 const recipeGlobalIndex = allRecipes.findIndex(r => r.name === recipe.name);
                 const isSelected = selectedRecipeIndex === recipeGlobalIndex;
                 const currentServings = servingSizes[recipeGlobalIndex] || recipe.servings;
@@ -1214,9 +1272,10 @@ const Index = () => {
                         <p className="text-xs text-center text-muted-foreground italic mt-2">Click to view full recipe</p>
                       )}
                     </div>
-                  </Card>
-                );
-              })}
+                    </Card>
+                  );
+                })
+              )}
             </div>
           </div>
         )}
