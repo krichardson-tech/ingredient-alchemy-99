@@ -113,6 +113,15 @@ const Index = () => {
   const [cuisinePreferences, setCuisinePreferences] = useState<CuisineType[]>([]);
   const [flavorPreferences, setFlavorPreferences] = useState<FlavorPreference[]>([]);
   const [tasteSensations, setTasteSensations] = useState<TasteSensation[]>([]);
+  const [mealType, setMealType] = useState<string[]>([]);
+  const [lastGenerationParams, setLastGenerationParams] = useState<{
+    ingredients: string[];
+    dietaryRestrictions: DietaryRestriction[];
+    cuisinePreferences: CuisineType[];
+    flavorPreferences: FlavorPreference[];
+    tasteSensations: TasteSensation[];
+    mealType: string[];
+  } | null>(null);
   const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
   const [allRecipes, setAllRecipes] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -293,8 +302,28 @@ const Index = () => {
       return;
     }
 
+    // Check if parameters have changed since last generation
+    const currentParams = {
+      ingredients: [...ingredients],
+      dietaryRestrictions: [...dietaryRestrictions],
+      cuisinePreferences: [...cuisinePreferences],
+      flavorPreferences: [...flavorPreferences],
+      tasteSensations: [...tasteSensations],
+      mealType: [...mealType],
+    };
+    
+    const paramsChanged = lastGenerationParams === null || 
+      JSON.stringify(currentParams) !== JSON.stringify(lastGenerationParams);
+
+    // If parameters changed, clear cache and force new generation
+    if (paramsChanged) {
+      setAllRecipes([]);
+      setCurrentIndex(0);
+      setShowAllShownMessage(false);
+    }
+
     // If we have recipes cached and haven't shown them all yet, show next batch
-    if (allRecipes.length > 0 && currentIndex < allRecipes.length) {
+    if (allRecipes.length > 0 && currentIndex < allRecipes.length && !paramsChanged) {
       const nextRecipes = allRecipes.slice(currentIndex, currentIndex + 3);
       setGeneratedRecipes(nextRecipes);
       setCurrentIndex(prev => prev + 3);
@@ -311,7 +340,7 @@ const Index = () => {
     }
 
     // If we've shown all recipes, cycle back to the beginning
-    if (allRecipes.length > 0 && currentIndex >= allRecipes.length) {
+    if (allRecipes.length > 0 && currentIndex >= allRecipes.length && !paramsChanged) {
       setCurrentIndex(0);
       setGeneratedRecipes(allRecipes.slice(0, 3));
       setShowAllShownMessage(false);
@@ -343,6 +372,7 @@ const Index = () => {
             cuisinePreference: cuisinePreferences,
             flavorPreferences,
             tasteSensations,
+            mealType,
           }),
         }
       );
@@ -356,6 +386,7 @@ const Index = () => {
       setAllRecipes(data.recipes);
       setCurrentIndex(3);
       setGeneratedRecipes(data.recipes.slice(0, 3));
+      setLastGenerationParams(currentParams);
       
       // Initialize serving sizes for new recipes
       const initialServings: { [key: number]: number } = {};
@@ -578,6 +609,28 @@ const Index = () => {
                     onClick={() => toggleTaste(taste)}
                   >
                     {taste}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-medium text-sm text-muted-foreground">Recipe Categories</h3>
+              <div className="flex flex-wrap gap-2">
+                {["breakfast", "brunch", "lunch", "dinner", "dessert", "snack", "appetizer", "side dish", "soup", "salad", "beverage"].map((category) => (
+                  <Badge
+                    key={category}
+                    variant={mealType.includes(category) ? "default" : "outline"}
+                    className="cursor-pointer capitalize"
+                    onClick={() => {
+                      setMealType(prev =>
+                        prev.includes(category)
+                          ? prev.filter(c => c !== category)
+                          : [...prev, category]
+                      );
+                    }}
+                  >
+                    {category}
                   </Badge>
                 ))}
               </div>
