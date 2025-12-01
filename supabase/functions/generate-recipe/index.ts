@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { ingredients, dietaryRestrictions, cuisinePreference, flavorPreferences, tasteSensations } = await req.json();
+    const { ingredients, dietaryRestrictions, cuisinePreference, flavorPreferences, tasteSensations, mealType } = await req.json();
     const SPOONACULAR_API_KEY = Deno.env.get('SPOONACULAR_API_KEY');
 
     if (!SPOONACULAR_API_KEY) {
@@ -44,6 +44,10 @@ serve(async (req) => {
     
     if (cuisinePreference && cuisinePreference.length > 0) {
       searchUrl.searchParams.append('cuisine', cuisinePreference.join(','));
+    }
+    
+    if (mealType && mealType.length > 0) {
+      searchUrl.searchParams.append('type', mealType.join(','));
     }
 
     console.log('Searching recipes:', searchUrl.toString().replace(SPOONACULAR_API_KEY, 'HIDDEN'));
