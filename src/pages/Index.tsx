@@ -726,7 +726,18 @@ const Index = () => {
             <MealPlanner
               recipes={allRecipes}
               favorites={favorites}
+              userIngredients={ingredients}
               onClose={() => setShowMealPlanner(false)}
+              onAddToShoppingList={(items) => {
+                const newItems = items.filter(item => !shoppingList.includes(item));
+                if (newItems.length > 0) {
+                  setShoppingList(prev => [...prev, ...newItems]);
+                  toast({
+                    title: "Added to shopping list! 🛒",
+                    description: `${newItems.length} ingredients added.`,
+                  });
+                }
+              }}
             />
           </div>
         )}
