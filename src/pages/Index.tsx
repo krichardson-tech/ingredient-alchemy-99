@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat, Heart, ShoppingCart, Search } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat, Heart, ShoppingCart, Search, Calendar } from "lucide-react";
+import { MealPlanner } from "@/components/MealPlanner";
 import { useToast } from "@/hooks/use-toast";
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
@@ -136,9 +137,11 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [showShoppingList, setShowShoppingList] = useState(false);
+  const [showMealPlanner, setShowMealPlanner] = useState(false);
   const [selectedFavoriteIndex, setSelectedFavoriteIndex] = useState<number | null>(null);
   const favoritesRef = useRef<HTMLDivElement>(null);
   const shoppingListRef = useRef<HTMLDivElement>(null);
+  const mealPlannerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -498,6 +501,22 @@ const Index = () => {
             <Button
               variant="outline"
               size="icon"
+              onClick={() => {
+                setShowMealPlanner(!showMealPlanner);
+                if (!showMealPlanner) {
+                  setTimeout(() => {
+                    mealPlannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }
+              }}
+              className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+              title="Meal Planner"
+            >
+              <Calendar className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
               onClick={resetAll}
               className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
               title="Reset all ingredients and recipes"
@@ -700,6 +719,17 @@ const Index = () => {
             </Button>
           </Card>
         </div>
+
+        {/* Meal Planner */}
+        {showMealPlanner && (
+          <div ref={mealPlannerRef}>
+            <MealPlanner
+              recipes={allRecipes}
+              favorites={favorites}
+              onClose={() => setShowMealPlanner(false)}
+            />
+          </div>
+        )}
 
         {showFavorites && (
           <Card ref={favoritesRef} className="p-6 space-y-4">
