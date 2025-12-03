@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Calendar, ChevronLeft, ChevronRight, Trash2, ShoppingCart, GripVertical, Check } from "lucide-react";
+import { X, Calendar, ChevronLeft, ChevronRight, Trash2, ShoppingCart, GripVertical, Check, Copy, Flame, Beef, Wheat, Droplets } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Recipe {
@@ -33,6 +33,13 @@ interface MealPlannerProps {
   userIngredients: string[];
   onClose: () => void;
   onAddToShoppingList?: (items: string[]) => void;
+}
+
+interface NutritionTotals {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
 }
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -73,6 +80,8 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
   const [draggedRecipe, setDraggedRecipe] = useState<{ recipe: Recipe; source?: { date: string; mealType: string } } | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<{ date: string; mealType: string } | null>(null);
   const [showGroceryList, setShowGroceryList] = useState(false);
+  const [showNutrition, setShowNutrition] = useState(false);
+  const [copyingRecipe, setCopyingRecipe] = useState<{ recipe: Recipe; fromDate: string; fromMeal: string } | null>(null);
   const { toast } = useToast();
 
   const weekDates = getWeekDates(currentWeekStart);
@@ -89,6 +98,47 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
     setMealPlan(newPlan);
     localStorage.setItem("mealPlan", JSON.stringify(newPlan));
   };
+
+  // Calculate daily nutrition totals
+  const dailyNutrition = useMemo(() => {
+    const totals: { [dateKey: string]: NutritionTotals } = {};
+    
+    weekDates.forEach(date => {
+      const dateKey = formatDateKey(date);
+      const dayPlan = mealPlan[dateKey];
+      const dayTotal: NutritionTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+      
+      if (dayPlan) {
+        MEAL_TYPES.forEach(mealType => {
+          const recipe = dayPlan[mealType];
+          if (recipe?.nutrition) {
+            dayTotal.calories += recipe.nutrition.calories;
+            dayTotal.protein += recipe.nutrition.protein;
+            dayTotal.carbs += recipe.nutrition.carbs;
+            dayTotal.fat += recipe.nutrition.fat;
+          }
+        });
+      }
+      
+      totals[dateKey] = dayTotal;
+    });
+    
+    return totals;
+  }, [mealPlan, weekDates]);
+
+  // Calculate weekly nutrition totals
+  const weeklyNutrition = useMemo(() => {
+    const total: NutritionTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    
+    Object.values(dailyNutrition).forEach(day => {
+      total.calories += day.calories;
+      total.protein += day.protein;
+      total.carbs += day.carbs;
+      total.fat += day.fat;
+    });
+    
+    return total;
+  }, [dailyNutrition]);
 
   // Calculate weekly grocery list
   const weeklyGroceryList = useMemo(() => {
@@ -140,8 +190,9 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
     };
     saveMealPlan(newPlan);
     setSelectedSlot(null);
+    setCopyingRecipe(null);
     toast({
-      title: "Recipe added to meal plan",
+      title: copyingRecipe ? "Recipe copied" : "Recipe added to meal plan",
       description: `${recipe.name} added for ${mealType}`,
     });
   };
@@ -176,6 +227,15 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
     toast({
       title: "Recipe moved",
       description: `${recipe.name} moved to ${toMeal}`,
+    });
+  };
+
+  const startCopyRecipe = (recipe: Recipe, dateKey: string, mealType: string) => {
+    setCopyingRecipe({ recipe, fromDate: dateKey, fromMeal: mealType });
+    setSelectedSlot(null);
+    toast({
+      title: "Select destination",
+      description: "Click on an empty slot to paste the recipe",
     });
   };
 
@@ -225,10 +285,8 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
     if (!draggedRecipe) return;
     
     if (draggedRecipe.source) {
-      // Moving from another slot
       moveRecipe(draggedRecipe.source.date, draggedRecipe.source.mealType, dateKey, mealType);
     } else {
-      // Adding from recipe list
       assignRecipe(dateKey, mealType, draggedRecipe.recipe);
     }
     
@@ -251,6 +309,15 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
     }
   };
 
+  const handleSlotClick = (dateKey: string, mealType: string) => {
+    if (copyingRecipe) {
+      assignRecipe(dateKey, mealType, copyingRecipe.recipe);
+    } else {
+      const isSelected = selectedSlot?.date === dateKey && selectedSlot?.mealType === mealType;
+      setSelectedSlot(isSelected ? null : { date: dateKey, mealType });
+    }
+  };
+
   return (
     <Card className="p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -258,14 +325,22 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
           <Calendar className="w-6 h-6 text-primary" />
           Meal Planner
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button 
+            variant={showNutrition ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setShowNutrition(!showNutrition)}
+          >
+            <Flame className="h-4 w-4 mr-1" />
+            Nutrition
+          </Button>
           <Button 
             variant={showGroceryList ? "default" : "outline"} 
             size="sm" 
             onClick={() => setShowGroceryList(!showGroceryList)}
           >
             <ShoppingCart className="h-4 w-4 mr-1" />
-            Grocery List
+            Grocery
             {missingIngredients.length > 0 && (
               <Badge variant="secondary" className="ml-1">{missingIngredients.length}</Badge>
             )}
@@ -279,6 +354,90 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
           </Button>
         </div>
       </div>
+
+      {/* Copy Mode Indicator */}
+      {copyingRecipe && (
+        <Card className="p-3 bg-secondary/20 border-secondary">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Copy className="h-4 w-4 text-secondary" />
+              <span className="text-sm">Copying: <strong>{copyingRecipe.recipe.name}</strong> - Click on any slot to paste</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setCopyingRecipe(null)}>
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Nutrition Summary */}
+      {showNutrition && (
+        <Card className="p-4 bg-muted/30 space-y-4">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Flame className="w-4 h-4 text-primary" />
+            Weekly Nutrition Summary
+          </h3>
+          
+          {/* Weekly Totals */}
+          <div className="grid grid-cols-4 gap-3">
+            <div className="text-center p-3 bg-background rounded-lg">
+              <Flame className="h-5 w-5 text-orange-500 mx-auto mb-1" />
+              <div className="text-lg font-bold">{weeklyNutrition.calories.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">Calories</div>
+            </div>
+            <div className="text-center p-3 bg-background rounded-lg">
+              <Beef className="h-5 w-5 text-red-500 mx-auto mb-1" />
+              <div className="text-lg font-bold">{weeklyNutrition.protein}g</div>
+              <div className="text-xs text-muted-foreground">Protein</div>
+            </div>
+            <div className="text-center p-3 bg-background rounded-lg">
+              <Wheat className="h-5 w-5 text-amber-500 mx-auto mb-1" />
+              <div className="text-lg font-bold">{weeklyNutrition.carbs}g</div>
+              <div className="text-xs text-muted-foreground">Carbs</div>
+            </div>
+            <div className="text-center p-3 bg-background rounded-lg">
+              <Droplets className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+              <div className="text-lg font-bold">{weeklyNutrition.fat}g</div>
+              <div className="text-xs text-muted-foreground">Fat</div>
+            </div>
+          </div>
+
+          {/* Daily Breakdown */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-muted-foreground">Daily Breakdown</h4>
+            <div className="grid grid-cols-7 gap-2 text-center text-xs">
+              {weekDates.map((date) => {
+                const dateKey = formatDateKey(date);
+                const dayNutrition = dailyNutrition[dateKey];
+                const hasNutrition = dayNutrition.calories > 0;
+                
+                return (
+                  <div 
+                    key={dateKey} 
+                    className={`p-2 rounded-lg ${isToday(date) ? 'bg-primary/10 border border-primary' : 'bg-background'}`}
+                  >
+                    <div className="font-medium mb-1">{formatDayName(date)}</div>
+                    {hasNutrition ? (
+                      <>
+                        <div className="text-orange-500 font-semibold">{dayNutrition.calories}</div>
+                        <div className="text-muted-foreground">cal</div>
+                        <div className="mt-1 space-y-0.5">
+                          <div>P: {dayNutrition.protein}g</div>
+                          <div>C: {dayNutrition.carbs}g</div>
+                          <div>F: {dayNutrition.fat}g</div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground">No meals</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Weekly Grocery Summary */}
       {showGroceryList && (
@@ -299,7 +458,6 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
             <p className="text-sm text-muted-foreground">No meals planned yet. Add recipes to see ingredients!</p>
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
-              {/* Missing Ingredients */}
               <div>
                 <h4 className="text-sm font-medium text-destructive mb-2">Need to Buy ({missingIngredients.length})</h4>
                 <div className="space-y-1 max-h-[150px] overflow-y-auto">
@@ -317,7 +475,6 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
                 </div>
               </div>
               
-              {/* Available Ingredients */}
               <div>
                 <h4 className="text-sm font-medium text-accent mb-2">Already Have ({weeklyGroceryList.length - missingIngredients.length})</h4>
                 <div className="space-y-1 max-h-[150px] overflow-y-auto">
@@ -377,14 +534,17 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
                 const meal = mealPlan[dateKey]?.[mealType];
                 const isSelected = selectedSlot?.date === dateKey && selectedSlot?.mealType === mealType;
                 const isDragOver = dragOverSlot?.date === dateKey && dragOverSlot?.mealType === mealType;
+                const isCopyTarget = copyingRecipe && !meal;
 
                 return (
                   <div
                     key={`${dateKey}-${mealType}`}
                     className={`min-h-[80px] border rounded-lg p-2 transition-all cursor-pointer ${
                       isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
-                    } ${isDragOver ? 'ring-2 ring-secondary bg-secondary/10' : 'hover:bg-muted/50'}`}
-                    onClick={() => setSelectedSlot(isSelected ? null : { date: dateKey, mealType })}
+                    } ${isDragOver ? 'ring-2 ring-secondary bg-secondary/10' : ''} ${
+                      isCopyTarget ? 'ring-2 ring-secondary/50 bg-secondary/5' : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => handleSlotClick(dateKey, mealType)}
                     onDragOver={(e) => handleDragOver(e, dateKey, mealType)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, dateKey, mealType)}
@@ -397,21 +557,35 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
                         onDragEnd={handleDragEnd}
                       >
                         <div className="flex items-start justify-between gap-1">
-                          <div className="flex items-start gap-1">
+                          <div className="flex items-start gap-1 flex-1 min-w-0">
                             <GripVertical className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
                             <span className="text-xs font-medium line-clamp-2">{meal.name}</span>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5 shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeRecipe(dateKey, mealType);
-                            }}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                          <div className="flex shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startCopyRecipe(meal, dateKey, mealType);
+                              }}
+                              title="Copy to another slot"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeRecipe(dateKey, mealType);
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                         {meal.nutrition && (
                           <Badge variant="outline" className="text-[10px] mt-auto w-fit">
@@ -421,7 +595,7 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
                       </div>
                     ) : (
                       <div className="h-full flex items-center justify-center text-muted-foreground text-xs">
-                        {isDragOver ? 'Drop here' : isSelected ? 'Select recipe' : '+ Add'}
+                        {isDragOver ? 'Drop here' : isCopyTarget ? 'Click to paste' : isSelected ? 'Select recipe' : '+ Add'}
                       </div>
                     )}
                   </div>
@@ -433,7 +607,7 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
       </div>
 
       {/* Recipe Selection */}
-      {selectedSlot && (
+      {selectedSlot && !copyingRecipe && (
         <div className="border-t pt-4 space-y-3">
           <h3 className="font-medium">Select a recipe for {selectedSlot.mealType} <span className="text-xs text-muted-foreground">(or drag & drop)</span></h3>
           {allRecipes.length === 0 ? (
