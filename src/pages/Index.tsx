@@ -6,9 +6,30 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat, Heart, ShoppingCart, Search, Calendar } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat, Heart, ShoppingCart, Search, Calendar, Sun, Moon } from "lucide-react";
 import { MealPlanner } from "@/components/MealPlanner";
 import { useToast } from "@/hooks/use-toast";
+
+const useTheme = () => {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
+
+  return { isDark, toggleTheme: () => setIsDark(!isDark) };
+};
 
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
 type CuisineType = "italian" | "asian" | "mexican" | "mediterranean" | "american";
@@ -108,6 +129,7 @@ const decimalToFraction = (decimal: number): string => {
 };
 
 const Index = () => {
+  const { isDark, toggleTheme } = useTheme();
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [currentIngredient, setCurrentIngredient] = useState("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<DietaryRestriction[]>([]);
@@ -460,6 +482,18 @@ const Index = () => {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <header className="relative text-center space-y-2">
+          {/* Theme Toggle - Top Left */}
+          <div className="absolute top-0 left-0">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+              className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </div>
           <div className="absolute top-0 right-0 flex gap-2">
             <Button
               variant="outline"

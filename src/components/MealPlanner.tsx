@@ -2,7 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Calendar, ChevronLeft, ChevronRight, Trash2, ShoppingCart, GripVertical, Check, Copy, Flame, Beef, Wheat, Droplets } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { X, Calendar, ChevronLeft, ChevronRight, Trash2, ShoppingCart, GripVertical, Check, Copy, Flame, Beef, Wheat, Droplets, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Recipe {
@@ -81,8 +83,17 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
   const [dragOverSlot, setDragOverSlot] = useState<{ date: string; mealType: string } | null>(null);
   const [showGroceryList, setShowGroceryList] = useState(false);
   const [showNutrition, setShowNutrition] = useState(false);
+  const [showNutritionSuggestions, setShowNutritionSuggestions] = useState(false);
   const [copyingRecipe, setCopyingRecipe] = useState<{ recipe: Recipe; fromDate: string; fromMeal: string } | null>(null);
   const { toast } = useToast();
+
+  // Default nutrition goals
+  const nutritionGoals = {
+    dailyCalories: 2000,
+    dailyProtein: 50,
+    dailyCarbs: 250,
+    dailyFat: 65,
+  };
 
   const weekDates = getWeekDates(currentWeekStart);
   const allRecipes = [...recipes, ...favorites.filter(f => !recipes.some(r => r.name === f.name))];
@@ -139,6 +150,73 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
     
     return total;
   }, [dailyNutrition]);
+
+  // Calculate nutrition-based recipe suggestions
+  const nutritionSuggestions = useMemo(() => {
+    const suggestions: { day: string; dateKey: string; mealType: string; recipes: Recipe[]; reason: string }[] = [];
+    
+    weekDates.forEach(date => {
+      const dateKey = formatDateKey(date);
+      const dayNutrition = dailyNutrition[dateKey];
+      const dayPlan = mealPlan[dateKey] || {};
+      
+      // Calculate remaining targets for the day
+      const remainingCalories = nutritionGoals.dailyCalories - dayNutrition.calories;
+      const remainingProtein = nutritionGoals.dailyProtein - dayNutrition.protein;
+      const remainingCarbs = nutritionGoals.dailyCarbs - dayNutrition.carbs;
+      const remainingFat = nutritionGoals.dailyFat - dayNutrition.fat;
+      
+      // Find empty meal slots
+      MEAL_TYPES.forEach(mealType => {
+        if (!dayPlan[mealType]) {
+          // Filter recipes that fit the remaining nutrition targets
+          const suitableRecipes = allRecipes
+            .filter(recipe => recipe.nutrition)
+            .filter(recipe => {
+              const n = recipe.nutrition!;
+              return n.calories <= remainingCalories + 100 && // Allow some flexibility
+                n.calories >= 100; // Minimum meaningful calories
+            })
+            .sort((a, b) => {
+              // Score recipes based on how well they fill macro gaps
+              const scoreA = calculateNutritionScore(a.nutrition!, remainingProtein, remainingCarbs, remainingFat);
+              const scoreB = calculateNutritionScore(b.nutrition!, remainingProtein, remainingCarbs, remainingFat);
+              return scoreB - scoreA;
+            })
+            .slice(0, 3);
+          
+          if (suitableRecipes.length > 0 && remainingCalories > 200) {
+            let reason = `~${Math.round(remainingCalories)} cal remaining`;
+            if (remainingProtein > 15) reason += `, need ${Math.round(remainingProtein)}g protein`;
+            
+            suggestions.push({
+              day: formatDayName(date),
+              dateKey,
+              mealType,
+              recipes: suitableRecipes,
+              reason,
+            });
+          }
+        }
+      });
+    });
+    
+    return suggestions.slice(0, 6); // Limit to 6 suggestions
+  }, [weekDates, dailyNutrition, mealPlan, allRecipes, nutritionGoals]);
+
+  const calculateNutritionScore = (
+    nutrition: { calories: number; protein: number; carbs: number; fat: number },
+    targetProtein: number,
+    targetCarbs: number,
+    targetFat: number
+  ): number => {
+    // Higher score = better fit for remaining targets
+    let score = 0;
+    if (targetProtein > 0) score += Math.min(nutrition.protein / targetProtein, 1) * 40;
+    if (targetCarbs > 0) score += Math.min(nutrition.carbs / targetCarbs, 1) * 30;
+    if (targetFat > 0) score += Math.min(nutrition.fat / targetFat, 1) * 30;
+    return score;
+  };
 
   // Calculate weekly grocery list
   const weeklyGroceryList = useMemo(() => {
@@ -374,10 +452,22 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
       {/* Nutrition Summary */}
       {showNutrition && (
         <Card className="p-4 bg-muted/30 space-y-4">
-          <h3 className="font-semibold flex items-center gap-2">
-            <Flame className="w-4 h-4 text-primary" />
-            Weekly Nutrition Summary
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Flame className="w-4 h-4 text-primary" />
+              Weekly Nutrition Summary
+            </h3>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="nutrition-suggestions"
+                checked={showNutritionSuggestions}
+                onCheckedChange={setShowNutritionSuggestions}
+              />
+              <Label htmlFor="nutrition-suggestions" className="text-sm cursor-pointer">
+                Show Suggestions
+              </Label>
+            </div>
+          </div>
           
           {/* Weekly Totals */}
           <div className="grid grid-cols-4 gap-3">
@@ -402,6 +492,52 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
               <div className="text-xs text-muted-foreground">Fat</div>
             </div>
           </div>
+
+          {/* Nutrition-Based Suggestions */}
+          {showNutritionSuggestions && nutritionSuggestions.length > 0 && (
+            <div className="space-y-3 border-t pt-3">
+              <h4 className="text-sm font-medium flex items-center gap-2 text-secondary">
+                <Lightbulb className="h-4 w-4" />
+                Recipe Suggestions to Meet Goals
+              </h4>
+              <div className="grid gap-2 max-h-[200px] overflow-y-auto">
+                {nutritionSuggestions.map((suggestion, idx) => (
+                  <div key={idx} className="bg-background rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium capitalize">
+                        {suggestion.day} - {suggestion.mealType}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{suggestion.reason}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {suggestion.recipes.map((recipe, rIdx) => (
+                        <Button
+                          key={rIdx}
+                          variant="outline"
+                          size="sm"
+                          className="h-auto py-1 px-2 text-xs"
+                          onClick={() => assignRecipe(suggestion.dateKey, suggestion.mealType, recipe)}
+                        >
+                          {recipe.name}
+                          {recipe.nutrition && (
+                            <Badge variant="secondary" className="ml-1 text-[10px]">
+                              {recipe.nutrition.calories}cal
+                            </Badge>
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {showNutritionSuggestions && nutritionSuggestions.length === 0 && (
+            <div className="text-sm text-muted-foreground text-center py-2 border-t">
+              No suggestions available. Add more recipes or clear some meal slots.
+            </div>
+          )}
 
           {/* Daily Breakdown */}
           <div className="space-y-2">
