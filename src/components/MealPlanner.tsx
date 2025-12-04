@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { X, Calendar, ChevronLeft, ChevronRight, Trash2, ShoppingCart, GripVertical, Check, Copy, Flame, Beef, Wheat, Droplets, Lightbulb, Clock, Settings } from "lucide-react";
+import { X, Calendar, ChevronLeft, ChevronRight, Trash2, ShoppingCart, GripVertical, Check, Copy, Flame, Beef, Wheat, Droplets, Lightbulb, Clock, Settings, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { DailyProgress } from "./NutritionProgressBar";
+import jsPDF from "jspdf";
 
 interface Recipe {
   name: string;
@@ -433,6 +435,134 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
     }
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    let yPos = 20;
+    const lineHeight = 7;
+    const pageHeight = 280;
+    
+    // Title
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Weekly Meal Plan", 105, yPos, { align: "center" });
+    yPos += 10;
+    
+    // Date range
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    const dateRange = `${weekDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekDates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    doc.text(dateRange, 105, yPos, { align: "center" });
+    yPos += 15;
+    
+    // Weekly totals
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Weekly Summary", 20, yPos);
+    yPos += lineHeight;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Calories: ${weeklyNutrition.calories.toLocaleString()} | Protein: ${weeklyNutrition.protein}g | Carbs: ${weeklyNutrition.carbs}g | Fat: ${weeklyNutrition.fat}g`, 20, yPos);
+    yPos += lineHeight;
+    doc.text(`Total Prep Time: ${Math.floor(weeklyPrepTime / 60)}h ${weeklyPrepTime % 60}m`, 20, yPos);
+    yPos += 15;
+    
+    // Each day
+    weekDates.forEach(date => {
+      const dateKey = formatDateKey(date);
+      const dayPlan = mealPlan[dateKey];
+      const dayNutrition = dailyNutrition[dateKey];
+      const dayPrep = dailyPrepTime[dateKey];
+      
+      // Check if we need a new page
+      if (yPos > pageHeight - 60) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      // Day header
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`, 20, yPos);
+      yPos += lineHeight;
+      
+      // Day nutrition summary
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100);
+      doc.text(`Calories: ${dayNutrition.calories} | P: ${dayNutrition.protein}g | C: ${dayNutrition.carbs}g | F: ${dayNutrition.fat}g | Prep: ${dayPrep}m`, 20, yPos);
+      doc.setTextColor(0);
+      yPos += lineHeight;
+      
+      // Meals
+      MEAL_TYPES.forEach(mealType => {
+        const recipe = dayPlan?.[mealType];
+        if (recipe) {
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "bold");
+          doc.text(`${mealType.charAt(0).toUpperCase() + mealType.slice(1)}: ${recipe.name}`, 25, yPos);
+          yPos += lineHeight - 1;
+          
+          // Recipe details
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "normal");
+          const details = `${recipe.prepTime}min • ${recipe.servings} servings`;
+          if (recipe.nutrition) {
+            doc.text(`${details} • ${recipe.nutrition.calories} cal`, 30, yPos);
+          } else {
+            doc.text(details, 30, yPos);
+          }
+          yPos += lineHeight - 1;
+          
+          // Ingredients
+          if (recipe.ingredients && recipe.ingredients.length > 0) {
+            doc.setTextColor(80);
+            const ingredientList = recipe.ingredients.slice(0, 5).map((ing: any) => 
+              typeof ing === 'string' ? ing : ing.name
+            ).join(', ');
+            const truncated = recipe.ingredients.length > 5 ? `${ingredientList}...` : ingredientList;
+            doc.text(`Ingredients: ${truncated}`, 30, yPos);
+            doc.setTextColor(0);
+            yPos += lineHeight;
+          }
+        }
+      });
+      
+      yPos += 5;
+    });
+    
+    // Shopping list
+    if (missingIngredients.length > 0) {
+      if (yPos > pageHeight - 40) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      yPos += 10;
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Shopping List", 20, yPos);
+      yPos += lineHeight;
+      
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      missingIngredients.forEach((ing, idx) => {
+        if (yPos > pageHeight) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(`• ${ing.name}${ing.amount ? ` (${ing.amount})` : ''}`, 25, yPos);
+        yPos += lineHeight - 2;
+      });
+    }
+    
+    // Save
+    doc.save(`meal-plan-${formatDateKey(weekDates[0])}.pdf`);
+    toast({
+      title: "PDF exported!",
+      description: "Your meal plan has been downloaded.",
+    });
+  };
+
   const handleSlotClick = (dateKey: string, mealType: string) => {
     if (copyingRecipe) {
       assignRecipe(dateKey, mealType, copyingRecipe.recipe);
@@ -468,6 +598,10 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
             {missingIngredients.length > 0 && (
               <Badge variant="secondary" className="ml-1">{missingIngredients.length}</Badge>
             )}
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportToPDF}>
+            <Download className="h-4 w-4 mr-1" />
+            Export
           </Button>
           <Button variant="outline" size="sm" onClick={clearWeek}>
             <Trash2 className="h-4 w-4 mr-1" />
@@ -652,40 +786,22 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
             </div>
           )}
 
-          {/* Daily Breakdown */}
+          {/* Daily Breakdown with Progress Bars */}
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">Daily Breakdown</h4>
-            <div className="grid grid-cols-7 gap-2 text-center text-xs">
+            <h4 className="text-sm font-medium text-muted-foreground">Daily Progress (vs Goals)</h4>
+            <div className="grid grid-cols-7 gap-2">
               {weekDates.map((date) => {
                 const dateKey = formatDateKey(date);
                 const dayNutrition = dailyNutrition[dateKey];
-                const hasNutrition = dayNutrition.calories > 0;
                 
                 return (
-                  <div 
-                    key={dateKey} 
-                    className={`p-2 rounded-lg ${isToday(date) ? 'bg-primary/10 border border-primary' : 'bg-background'}`}
-                  >
-                    <div className="font-medium mb-1">{formatDayName(date)}</div>
-                    {hasNutrition ? (
-                      <>
-                        <div className="text-orange-500 font-semibold">{dayNutrition.calories}</div>
-                        <div className="text-muted-foreground">cal</div>
-                        <div className="mt-1 space-y-0.5">
-                          <div>P: {dayNutrition.protein}g</div>
-                          <div>C: {dayNutrition.carbs}g</div>
-                          <div>F: {dayNutrition.fat}g</div>
-                        </div>
-                        {dailyPrepTime[dateKey] > 0 && (
-                          <div className="mt-1 text-purple-500 font-medium">
-                            {dailyPrepTime[dateKey]}m
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-muted-foreground">No meals</div>
-                    )}
-                  </div>
+                  <DailyProgress
+                    key={dateKey}
+                    dayName={formatDayName(date)}
+                    nutrition={dayNutrition}
+                    goals={nutritionGoals}
+                    isToday={isToday(date)}
+                  />
                 );
               })}
             </div>

@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat, Heart, ShoppingCart, Search, Calendar, Sun, Moon } from "lucide-react";
+import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, UtensilsCrossed, Coffee, Fish, RotateCcw, Soup, Shell, Repeat, Heart, ShoppingCart, Search, Calendar, Sun, Moon, FileDown } from "lucide-react";
 import { MealPlanner } from "@/components/MealPlanner";
+import { RecipeImport } from "@/components/RecipeImport";
 import { useToast } from "@/hooks/use-toast";
 
 const useTheme = () => {
@@ -160,10 +161,12 @@ const Index = () => {
   const [showFavorites, setShowFavorites] = useState(false);
   const [showShoppingList, setShowShoppingList] = useState(false);
   const [showMealPlanner, setShowMealPlanner] = useState(false);
+  const [showRecipeImport, setShowRecipeImport] = useState(false);
   const [selectedFavoriteIndex, setSelectedFavoriteIndex] = useState<number | null>(null);
   const favoritesRef = useRef<HTMLDivElement>(null);
   const shoppingListRef = useRef<HTMLDivElement>(null);
   const mealPlannerRef = useRef<HTMLDivElement>(null);
+  const recipeImportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -195,6 +198,13 @@ const Index = () => {
     }
     setFavorites(updated);
     localStorage.setItem("favorites", JSON.stringify(updated));
+  };
+
+  const handleImportRecipe = (recipe: any) => {
+    const updated = [...favorites, recipe];
+    setFavorites(updated);
+    localStorage.setItem("favorites", JSON.stringify(updated));
+    setShowRecipeImport(false);
   };
 
   const addToShoppingList = (recipe: any) => {
@@ -551,6 +561,22 @@ const Index = () => {
             <Button
               variant="outline"
               size="icon"
+              onClick={() => {
+                setShowRecipeImport(!showRecipeImport);
+                if (!showRecipeImport) {
+                  setTimeout(() => {
+                    recipeImportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }
+              }}
+              className="hover:bg-secondary/10 hover:text-secondary hover:border-secondary/50 transition-all"
+              title="Import Recipe"
+            >
+              <FileDown className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
               onClick={resetAll}
               className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
               title="Reset all ingredients and recipes"
@@ -772,6 +798,16 @@ const Index = () => {
                   });
                 }
               }}
+            />
+          </div>
+        )}
+
+        {/* Recipe Import */}
+        {showRecipeImport && (
+          <div ref={recipeImportRef}>
+            <RecipeImport
+              onImport={handleImportRecipe}
+              onClose={() => setShowRecipeImport(false)}
             />
           </div>
         )}
