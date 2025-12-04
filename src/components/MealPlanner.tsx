@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { X, Calendar, ChevronLeft, ChevronRight, Trash2, ShoppingCart, GripVertical, Check, Copy, Flame, Beef, Wheat, Droplets, Lightbulb } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { X, Calendar, ChevronLeft, ChevronRight, Trash2, ShoppingCart, GripVertical, Check, Copy, Flame, Beef, Wheat, Droplets, Lightbulb, Clock, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Recipe {
@@ -84,15 +85,31 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
   const [showGroceryList, setShowGroceryList] = useState(false);
   const [showNutrition, setShowNutrition] = useState(false);
   const [showNutritionSuggestions, setShowNutritionSuggestions] = useState(false);
+  const [showGoalSettings, setShowGoalSettings] = useState(false);
   const [copyingRecipe, setCopyingRecipe] = useState<{ recipe: Recipe; fromDate: string; fromMeal: string } | null>(null);
   const { toast } = useToast();
 
-  // Default nutrition goals
-  const nutritionGoals = {
-    dailyCalories: 2000,
-    dailyProtein: 50,
-    dailyCarbs: 250,
-    dailyFat: 65,
+  // Customizable nutrition goals
+  const [nutritionGoals, setNutritionGoals] = useState(() => {
+    const stored = localStorage.getItem("nutritionGoals");
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return {
+      dailyCalories: 2000,
+      dailyProtein: 50,
+      dailyCarbs: 250,
+      dailyFat: 65,
+    };
+  });
+
+  const saveNutritionGoals = (goals: typeof nutritionGoals) => {
+    setNutritionGoals(goals);
+    localStorage.setItem("nutritionGoals", JSON.stringify(goals));
+    toast({
+      title: "Goals saved",
+      description: "Your nutrition goals have been updated.",
+    });
   };
 
   const weekDates = getWeekDates(currentWeekStart);
@@ -150,6 +167,35 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
     
     return total;
   }, [dailyNutrition]);
+
+  // Calculate daily prep time totals
+  const dailyPrepTime = useMemo(() => {
+    const totals: { [dateKey: string]: number } = {};
+    
+    weekDates.forEach(date => {
+      const dateKey = formatDateKey(date);
+      const dayPlan = mealPlan[dateKey];
+      let totalTime = 0;
+      
+      if (dayPlan) {
+        MEAL_TYPES.forEach(mealType => {
+          const recipe = dayPlan[mealType];
+          if (recipe?.prepTime) {
+            totalTime += recipe.prepTime;
+          }
+        });
+      }
+      
+      totals[dateKey] = totalTime;
+    });
+    
+    return totals;
+  }, [mealPlan, weekDates]);
+
+  // Calculate weekly prep time
+  const weeklyPrepTime = useMemo(() => {
+    return Object.values(dailyPrepTime).reduce((sum, time) => sum + time, 0);
+  }, [dailyPrepTime]);
 
   // Calculate nutrition-based recipe suggestions
   const nutritionSuggestions = useMemo(() => {
@@ -452,25 +498,87 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
       {/* Nutrition Summary */}
       {showNutrition && (
         <Card className="p-4 bg-muted/30 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="font-semibold flex items-center gap-2">
               <Flame className="w-4 h-4 text-primary" />
               Weekly Nutrition Summary
             </h3>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="nutrition-suggestions"
-                checked={showNutritionSuggestions}
-                onCheckedChange={setShowNutritionSuggestions}
-              />
-              <Label htmlFor="nutrition-suggestions" className="text-sm cursor-pointer">
-                Show Suggestions
-              </Label>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Button
+                variant={showGoalSettings ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setShowGoalSettings(!showGoalSettings)}
+              >
+                <Settings className="h-4 w-4 mr-1" />
+                Goals
+              </Button>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="nutrition-suggestions"
+                  checked={showNutritionSuggestions}
+                  onCheckedChange={setShowNutritionSuggestions}
+                />
+                <Label htmlFor="nutrition-suggestions" className="text-sm cursor-pointer">
+                  Suggestions
+                </Label>
+              </div>
             </div>
           </div>
+
+          {/* Goal Settings */}
+          {showGoalSettings && (
+            <div className="border rounded-lg p-4 bg-background space-y-3">
+              <h4 className="text-sm font-medium">Daily Nutrition Goals</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="goal-calories" className="text-xs text-muted-foreground">Calories</Label>
+                  <Input
+                    id="goal-calories"
+                    type="number"
+                    value={nutritionGoals.dailyCalories}
+                    onChange={(e) => setNutritionGoals({ ...nutritionGoals, dailyCalories: parseInt(e.target.value) || 0 })}
+                    className="h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="goal-protein" className="text-xs text-muted-foreground">Protein (g)</Label>
+                  <Input
+                    id="goal-protein"
+                    type="number"
+                    value={nutritionGoals.dailyProtein}
+                    onChange={(e) => setNutritionGoals({ ...nutritionGoals, dailyProtein: parseInt(e.target.value) || 0 })}
+                    className="h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="goal-carbs" className="text-xs text-muted-foreground">Carbs (g)</Label>
+                  <Input
+                    id="goal-carbs"
+                    type="number"
+                    value={nutritionGoals.dailyCarbs}
+                    onChange={(e) => setNutritionGoals({ ...nutritionGoals, dailyCarbs: parseInt(e.target.value) || 0 })}
+                    className="h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="goal-fat" className="text-xs text-muted-foreground">Fat (g)</Label>
+                  <Input
+                    id="goal-fat"
+                    type="number"
+                    value={nutritionGoals.dailyFat}
+                    onChange={(e) => setNutritionGoals({ ...nutritionGoals, dailyFat: parseInt(e.target.value) || 0 })}
+                    className="h-8"
+                  />
+                </div>
+              </div>
+              <Button size="sm" onClick={() => saveNutritionGoals(nutritionGoals)}>
+                Save Goals
+              </Button>
+            </div>
+          )}
           
           {/* Weekly Totals */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-5 gap-3">
             <div className="text-center p-3 bg-background rounded-lg">
               <Flame className="h-5 w-5 text-orange-500 mx-auto mb-1" />
               <div className="text-lg font-bold">{weeklyNutrition.calories.toLocaleString()}</div>
@@ -490,6 +598,11 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
               <Droplets className="h-5 w-5 text-blue-500 mx-auto mb-1" />
               <div className="text-lg font-bold">{weeklyNutrition.fat}g</div>
               <div className="text-xs text-muted-foreground">Fat</div>
+            </div>
+            <div className="text-center p-3 bg-background rounded-lg">
+              <Clock className="h-5 w-5 text-purple-500 mx-auto mb-1" />
+              <div className="text-lg font-bold">{Math.floor(weeklyPrepTime / 60)}h {weeklyPrepTime % 60}m</div>
+              <div className="text-xs text-muted-foreground">Prep Time</div>
             </div>
           </div>
 
@@ -563,6 +676,11 @@ export const MealPlanner = ({ recipes, favorites, userIngredients, onClose, onAd
                           <div>C: {dayNutrition.carbs}g</div>
                           <div>F: {dayNutrition.fat}g</div>
                         </div>
+                        {dailyPrepTime[dateKey] > 0 && (
+                          <div className="mt-1 text-purple-500 font-medium">
+                            {dailyPrepTime[dateKey]}m
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div className="text-muted-foreground">No meals</div>
