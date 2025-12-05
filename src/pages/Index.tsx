@@ -497,15 +497,6 @@ const Index = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={toggleTheme}
-              className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
-              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
               onClick={() => {
                 setShowRecipeImport(!showRecipeImport);
                 if (!showRecipeImport) {
@@ -518,6 +509,15 @@ const Index = () => {
               title="Import Recipe"
             >
               <FileDown className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+              className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             <Button
               variant="outline"
@@ -605,15 +605,6 @@ const Index = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={toggleTheme}
-              className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
-              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
               onClick={() => {
                 setShowRecipeImport(!showRecipeImport);
                 if (!showRecipeImport) {
@@ -626,6 +617,15 @@ const Index = () => {
               title="Import Recipe"
             >
               <FileDown className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+              className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             <Button
               variant="outline"
