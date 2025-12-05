@@ -492,8 +492,8 @@ const Index = () => {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <header className="relative text-center space-y-2">
-          {/* Theme Toggle - Top Left */}
-          <div className="absolute top-0 left-0">
+          {/* Desktop: Buttons in corners */}
+          <div className="hidden md:flex absolute top-0 left-0 gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -503,8 +503,33 @@ const Index = () => {
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setShowRecipeImport(!showRecipeImport);
+                if (!showRecipeImport) {
+                  setTimeout(() => {
+                    recipeImportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }
+              }}
+              className="hover:bg-secondary/10 hover:text-secondary hover:border-secondary/50 transition-all"
+              title="Import Recipe"
+            >
+              <FileDown className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={resetAll}
+              className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
+              title="Reset all ingredients and recipes"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="absolute top-0 right-0 flex gap-2">
+          <div className="hidden md:flex absolute top-0 right-0 gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -558,6 +583,32 @@ const Index = () => {
             >
               <Calendar className="h-4 w-4" />
             </Button>
+          </div>
+
+          {/* Title */}
+          <div className="flex items-center justify-center gap-3 pt-12 md:pt-0">
+            <span className="text-4xl animate-float">🧙‍♀️</span>
+            <ChefHat className="w-10 h-10 text-primary" />
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif">Ingredient Alchemy</h1>
+            <span className="text-4xl animate-float" style={{ animationDelay: '1s' }}>✨</span>
+          </div>
+          <p className="text-muted-foreground text-lg flex items-center justify-center gap-2">
+            <span className="animate-bounce-slow">🥘</span>
+            Transform your ingredients into delicious recipes
+            <span className="animate-bounce-slow" style={{ animationDelay: '0.5s' }}>🍳</span>
+          </p>
+
+          {/* Mobile: Buttons below title */}
+          <div className="flex md:hidden justify-center gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+              className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
             <Button
               variant="outline"
               size="icon"
@@ -583,18 +634,60 @@ const Index = () => {
             >
               <RotateCcw className="h-4 w-4" />
             </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setShowFavorites(!showFavorites);
+                if (!showFavorites) {
+                  setTimeout(() => {
+                    favoritesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }
+              }}
+              className="hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all"
+              title="View favorites"
+            >
+              <Heart className={`h-4 w-4 ${favorites.length > 0 ? 'fill-accent text-accent' : ''}`} />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setShowShoppingList(!showShoppingList);
+                if (!showShoppingList) {
+                  setTimeout(() => {
+                    shoppingListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }
+              }}
+              className="hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all relative"
+              title="View shopping list"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              {shoppingList.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  {shoppingList.length}
+                </span>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setShowMealPlanner(!showMealPlanner);
+                if (!showMealPlanner) {
+                  setTimeout(() => {
+                    mealPlannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }
+              }}
+              className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+              title="Meal Planner"
+            >
+              <Calendar className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-4xl animate-float">🧙‍♀️</span>
-            <ChefHat className="w-10 h-10 text-primary" />
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif">Ingredient Alchemy</h1>
-            <span className="text-4xl animate-float" style={{ animationDelay: '1s' }}>✨</span>
-          </div>
-          <p className="text-muted-foreground text-lg flex items-center justify-center gap-2">
-            <span className="animate-bounce-slow">🥘</span>
-            Transform your ingredients into delicious recipes
-            <span className="animate-bounce-slow" style={{ animationDelay: '0.5s' }}>🍳</span>
-          </p>
         </header>
 
         <Card className="p-6 border-accent/30">
