@@ -866,9 +866,9 @@ const Index = () => {
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 mr-2" />
+                  <span className="text-lg mr-2">🪄</span>
                   Generate Recipe
-                  <span className="text-lg ml-2">🪄</span>
+                  <Sparkles className="w-4 h-4 ml-2" />
                 </>
               )}
             </Button>
