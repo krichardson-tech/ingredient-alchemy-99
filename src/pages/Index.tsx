@@ -586,11 +586,13 @@ const Index = () => {
           </div>
 
           {/* Title */}
-          <div className="flex items-center justify-center gap-3 pt-12 md:pt-0">
-            <span className="text-4xl animate-float">🧙‍♀️</span>
-            <ChefHat className="w-10 h-10 text-primary" />
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif">Ingredient Alchemy</h1>
-            <span className="text-4xl animate-float" style={{ animationDelay: '1s' }}>✨</span>
+          <div className="flex flex-col items-center justify-center pt-12 md:pt-0">
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-4xl animate-float">🧙‍♀️</span>
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif">Ingredient Alchemy</h1>
+              <span className="text-4xl animate-float" style={{ animationDelay: '1s' }}>✨</span>
+            </div>
+            <ChefHat className="w-10 h-10 text-primary mt-2" />
           </div>
           <p className="text-muted-foreground text-lg flex items-center justify-center gap-2">
             <span className="animate-bounce-slow">🥘</span>
