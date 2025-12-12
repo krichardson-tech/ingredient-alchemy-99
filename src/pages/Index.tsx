@@ -860,9 +860,9 @@ const Index = () => {
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <span className="text-lg mr-2 animate-spin-slow">🔮</span>
                   Generating Magic...
-                  <span className="text-lg ml-2 animate-spin-slow">🔮</span>
+                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
                 </>
               ) : (
                 <>
