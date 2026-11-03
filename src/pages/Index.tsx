@@ -53,12 +53,12 @@ const AlchemySketch = ({
       const particles: Array<{ x: number; y: number; size: number; speed: number }> = [];
 
       p.setup = () => {
-        p.createCanvas(420, 140);
+        p.createCanvas(Math.max(280, host.clientWidth), 140);
         p.noStroke();
 
         for (let i = 0; i < Math.max(8, ingredientCount * 3); i += 1) {
           particles.push({
-            x: p.random(20, 400),
+            x: p.random(20, p.width - 20),
             y: p.random(20, 120),
             size: p.random(4, 12),
             speed: p.random(0.4, 1.4),
@@ -74,7 +74,7 @@ const AlchemySketch = ({
 
           if (particle.y < -10) {
             particle.y = 150;
-            particle.x = p.random(20, 400);
+            particle.x = p.random(20, p.width - 20);
           }
 
           p.fill(194, 58, 98, 190);
@@ -84,7 +84,7 @@ const AlchemySketch = ({
         p.fill(70, 45, 55);
         p.textAlign(p.CENTER, p.CENTER);
         p.textSize(16);
-        p.text(recipeName || "Ingredient Alchemy", 210, 70);
+        p.text(recipeName || "Ingredient Alchemy", p.width / 2, 70);
       };
     };
 
