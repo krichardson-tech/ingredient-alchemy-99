@@ -36,13 +36,21 @@ describe("local recipe generation", () => {
   });
   test("cuisine preferences improve ranking for equal pantry coverage", () => {
     const input = preferences({ ingredients: ["garlic", "olive oil"] });
-    expect(rankRecipes(input)[0].id).toBe("garlic-basil-pasta");
-    expect(rankRecipes({ ...input, cuisinePreferences: ["mediterranean"] })[0].id).toBe("tomato-bean-soup");
+    const italian = recipes.find(recipe => recipe.id === "garlic-basil-pasta");
+    if (!italian) throw new Error("Missing pasta recipe");
+    const mediterranean = { ...italian, id: "mediterranean-pasta", cuisine: "mediterranean" };
+    const catalog = [italian, mediterranean];
+    expect(rankRecipes(input, catalog)[0].id).toBe("garlic-basil-pasta");
+    expect(rankRecipes({ ...input, cuisinePreferences: ["mediterranean"] }, catalog)[0].id).toBe("mediterranean-pasta");
   });
   test("flavor and taste preferences improve ranking for equal pantry coverage", () => {
     const input = preferences({ ingredients: ["banana"] });
-    expect(rankRecipes(input)[0].id).toBe("banana-oat-cookies");
-    expect(rankRecipes({ ...input, flavorPreferences: ["tangy"], tasteSensations: ["sour"] })[0].id).toBe("berry-banana-smoothie");
+    const cookies = recipes.find(recipe => recipe.id === "banana-oat-cookies");
+    if (!cookies) throw new Error("Missing cookie recipe");
+    const tangy = { ...cookies, id: "tangy-cookies", flavorTags: ["tangy"], tasteTags: ["sour"] };
+    const catalog = [cookies, tangy];
+    expect(rankRecipes(input, catalog)[0].id).toBe("banana-oat-cookies");
+    expect(rankRecipes({ ...input, flavorPreferences: ["tangy"], tasteSensations: ["sour"] }, catalog)[0].id).toBe("tangy-cookies");
   });
   test("changed pantry produces fresh matches and empty pantry returns none", () => {
     expect(rankRecipes(preferences({ ingredients: ["bread", "deli meat", "cheese", "lettuce", "tomato", "mayo", "mustard"] }))[0].id).toBe("deli-sandwich");
