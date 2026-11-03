@@ -33,6 +33,75 @@ const useTheme = () => {
   return { isDark, toggleTheme: () => setIsDark(!isDark) };
 };
 
+const AlchemySketch = ({
+  ingredientCount,
+  recipeName,
+}: {
+  ingredientCount: number;
+  recipeName?: string;
+}) => {
+  const sketchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const P5 = (window as any).p5;
+    if (!P5 || !sketchRef.current) return;
+
+    const host = sketchRef.current;
+    host.innerHTML = "";
+
+    const sketch = (p: any) => {
+      const particles: Array<{ x: number; y: number; size: number; speed: number }> = [];
+
+      p.setup = () => {
+        p.createCanvas(420, 140);
+        p.noStroke();
+
+        for (let i = 0; i < Math.max(8, ingredientCount * 3); i += 1) {
+          particles.push({
+            x: p.random(20, 400),
+            y: p.random(20, 120),
+            size: p.random(4, 12),
+            speed: p.random(0.4, 1.4),
+          });
+        }
+      };
+
+      p.draw = () => {
+        p.background(248, 241, 235);
+
+        particles.forEach((particle) => {
+          particle.y -= particle.speed;
+
+          if (particle.y < -10) {
+            particle.y = 150;
+            particle.x = p.random(20, 400);
+          }
+
+          p.fill(194, 58, 98, 190);
+          p.circle(particle.x, particle.y, particle.size);
+        });
+
+        p.fill(70, 45, 55);
+        p.textAlign(p.CENTER, p.CENTER);
+        p.textSize(16);
+        p.text(recipeName || "Ingredient Alchemy", 210, 70);
+      };
+    };
+
+    const instance = new P5(sketch, host);
+
+    return () => instance.remove();
+  }, [ingredientCount, recipeName]);
+
+  return (
+    <div
+      ref={sketchRef}
+      className="mx-auto overflow-hidden rounded-lg border border-accent/30"
+      aria-label="Animated ingredient alchemy visual"
+    />
+  );
+};
+
 type DietaryRestriction = "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free";
 type CuisineType = "italian" | "asian" | "mexican" | "mediterranean" | "american";
 type FlavorPreference = "spicy" | "sweet" | "savory" | "tangy" | "mild" | "bold";
@@ -555,6 +624,11 @@ const Index = () => {
             Transform your ingredients into delicious recipes
             <span className="animate-bounce-slow" style={{ animationDelay: '0.5s' }}>🍳</span>
           </p>
+
+          <AlchemySketch
+            ingredientCount={ingredients.length}
+            recipeName={generatedRecipes[0]?.name}
+          />
 
           {/* Mobile: Buttons below title */}
           <div className="flex md:hidden justify-center gap-2 pt-2">
