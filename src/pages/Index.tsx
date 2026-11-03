@@ -95,7 +95,7 @@ const AlchemySketch = ({
     const instance = new P5(sketch, host);
 
     return () => instance.remove();
-  }, [ingredientCount, recipeName]);
+    }, [ingredientCount, recipeCount]);
 
   return (
     <div
