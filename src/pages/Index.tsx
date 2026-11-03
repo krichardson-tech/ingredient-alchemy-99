@@ -10,6 +10,7 @@ import { Plus, X, ChefHat, Sparkles, Loader2, Clock, Users, Sandwich, Salad, Ute
 import { MealPlanner } from "@/components/MealPlanner";
 import { RecipeImport } from "@/components/RecipeImport";
 import { useToast } from "@/hooks/use-toast";
+import { rankRecipes } from "@/lib/recipeRanking";
 
 const useTheme = () => {
   const [isDark, setIsDark] = useState(() => {
@@ -395,9 +396,10 @@ const Index = () => {
 
     // If we've shown all recipes, cycle back to the beginning
     if (allRecipes.length > 0 && currentIndex >= allRecipes.length && !paramsChanged) {
-      setCurrentIndex(0);
+      setCurrentIndex(Math.min(3, allRecipes.length));
       setGeneratedRecipes(allRecipes.slice(0, 3));
-      setShowAllShownMessage(false);
+      setShowAllShownMessage(allRecipes.length <= 3);
+      setSelectedRecipeIndex(null);
       toast({
         title: "Starting over! 🔄",
         description: "Showing recipes from the beginning",
@@ -405,83 +407,37 @@ const Index = () => {
       return;
     }
 
-    // Fetch new recipes from API
+    // Rank the built-in catalog using the current pantry and preferences.
     setIsGenerating(true);
-    setGeneratedRecipes([]);
-    setShowAllShownMessage(false);
+    setSelectedRecipeIndex(null);
+    setIngredientSubstitutes({});
+    setShowSubstituteFor(null);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-recipe`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ingredients,
-            dietaryRestrictions: dietaryRestrictions.map(d => 
-              d.charAt(0).toUpperCase() + d.slice(1).replace('-', ' ')
-            ),
-            cuisinePreference: cuisinePreferences,
-            flavorPreferences,
-            tasteSensations,
-            mealType,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        
-        // Handle quota limit error specifically
-        if (response.status === 402) {
-          toast({
-            title: "API Limit Reached",
-            description: error.error || "The recipe API daily limit has been reached. Please try again tomorrow.",
-            variant: "destructive",
-          });
-          setIsGenerating(false);
-          return;
-        }
-        
-        // Handle no recipes found
-        if (response.status === 404) {
-          toast({
-            title: "No Recipes Found",
-            description: error.error || "No recipes match your current preferences and ingredients.",
-            variant: "destructive",
-          });
-          setIsGenerating(false);
-          return;
-        }
-        
-        throw new Error(error.error || 'Failed to generate recipes');
-      }
-
-      const data = await response.json();
-      setAllRecipes(data.recipes);
-      setCurrentIndex(3);
-      setGeneratedRecipes(data.recipes.slice(0, 3));
+      const rankedRecipes = rankRecipes(currentParams);
+      setAllRecipes(rankedRecipes);
+      setCurrentIndex(Math.min(3, rankedRecipes.length));
+      setGeneratedRecipes(rankedRecipes.slice(0, 3));
       setLastGenerationParams(currentParams);
-      
-      // Initialize serving sizes for new recipes
+      setShowAllShownMessage(rankedRecipes.length > 0 && rankedRecipes.length <= 3);
+
       const initialServings: { [key: number]: number } = {};
-      data.recipes.forEach((recipe: any, idx: number) => {
+      rankedRecipes.forEach((recipe, idx) => {
         initialServings[idx] = recipe.servings;
       });
       setServingSizes(initialServings);
-      
+
+      if (rankedRecipes.length === 0) {
+        toast({
+          title: "No Recipes Found",
+          description: `None of the 12 local recipes${mealType.length ? ` for ${mealType.join(", ")}` : ""} match your ingredients${dietaryRestrictions.length ? ` and ${dietaryRestrictions.join(", ")} restrictions` : ""}. Try adding ingredients or adjusting your preferences.`,
+          variant: "destructive",
+        });
+        return;
+      }
       toast({
         title: "Recipes generated! ✨",
-        description: `Found ${data.recipes.length} delicious recipes! Click again for more.`,
-      });
-    } catch (error) {
-      console.error('Error generating recipe:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate recipe. Please try again.",
-        variant: "destructive",
+        description: `Found ${rankedRecipes.length} recipes ranked by your ingredients and preferences. Missing ingredients are highlighted. Click again for more.`,
       });
     } finally {
       setIsGenerating(false);
