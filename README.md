@@ -1,73 +1,58 @@
-# Welcome to your Lovable project
+# Ingredient Alchemy
 
-## Project info
+Ingredient Alchemy is a recipe generator that helps users turn the ingredients they already have into meal ideas.
 
-**URL**: https://lovable.dev/projects/09654766-6ba0-40e3-bf1d-b05878c466cc
+## Live Demo
 
-## How can I edit this code?
+https://ingredient-alchemy-99.netlify.app/
 
-There are several ways of editing your application.
+## Buildathon Path
 
-**Use Lovable**
+Useful — the project helps reduce food waste and makes meal planning easier by suggesting recipes from available ingredients.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/09654766-6ba0-40e3-bf1d-b05878c466cc) and start prompting.
+## Approved Tool
 
-Changes made via Lovable will be committed automatically to this repo.
+This project uses **p5.js** as a meaningful part of the experience. The p5.js animation visualizes the recipe-generation process with floating ingredient particles and displays the currently generated recipe.
 
-**Use your preferred IDE**
+p5.js is loaded from the jsDelivr CDN in `index.html`.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Generate recipes from available ingredients
+- Quick-start ingredient presets
+- Dietary restriction filters
+- Cuisine, flavor, taste, and meal-category preferences
+- Recipe ranking based on ingredient matches
+- Favorites
+- Shopping list
+- Meal planner
+- Ingredient substitutions
+- Light and dark themes
+- Animated p5.js alchemy visual
 
-Follow these steps:
+## How It Works
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Recipes are stored locally in `src/data/recipes.ts`. When the user generates a recipe, the app ranks recipes by ingredient coverage and selected preferences. This avoids external recipe API quotas and keeps the demo reliable.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Technologies
 
-# Step 3: Install the necessary dependencies.
-npm i
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui
+- p5.js
+- Supabase project configuration
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## Outside Resources and AI Disclosure
+
+AI tools, including Lovable and ChatGPT/Codex, assisted with scaffolding, debugging, code suggestions, and documentation. The project code and final design were reviewed and tested by the project author.
+
+The original prototype used Spoonacular during development. The submitted version uses a local recipe dataset so the application does not depend on Spoonacular’s request quota.
+
+## Running Locally
+
+```bash
+npm install
 npm run dev
 ```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/09654766-6ba0-40e3-bf1d-b05878c466cc) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
