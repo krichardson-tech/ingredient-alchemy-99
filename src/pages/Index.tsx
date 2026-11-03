@@ -518,7 +518,7 @@ const Index = () => {
       <div className="max-w-6xl mx-auto space-y-8">
         <header className="relative text-center space-y-2">
           {/* Desktop: Buttons in corners */}
-          <div className="hidden md:flex absolute top-0 left-0 gap-2">
+          <div className="hidden lg:flex absolute top-0 left-0 gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -554,7 +554,7 @@ const Index = () => {
               <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
-          <div className="hidden md:flex absolute top-0 right-0 gap-2">
+          <div className="hidden lg:flex absolute top-0 right-0 gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -631,7 +631,7 @@ const Index = () => {
           />
 
           {/* Mobile: Buttons below title */}
-          <div className="flex md:hidden justify-center gap-2 pt-2">
+          <div className="flex lg:hidden justify-center gap-2 pt-2">
             <Button
               variant="outline"
               size="icon"
