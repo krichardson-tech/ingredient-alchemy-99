@@ -35,10 +35,10 @@ const useTheme = () => {
 
 const AlchemySketch = ({
   ingredientCount,
-  recipeName,
+  recipeCount,
 }: {
   ingredientCount: number;
-  recipeName?: string;
+  recipeCount: number;
 }) => {
   const sketchRef = useRef<HTMLDivElement>(null);
 
@@ -84,7 +84,11 @@ const AlchemySketch = ({
         p.fill(70, 45, 55);
         p.textAlign(p.CENTER, p.CENTER);
         p.textSize(16);
-        p.text(recipeName || "Ingredient Alchemy", p.width / 2, 70);
+        p.text(
+          `${ingredientCount} pantry ingredients → ${recipeCount} recipe matches`,
+          p.width / 2,
+          70
+        );
       };
     };
 
@@ -627,7 +631,7 @@ const Index = () => {
 
           <AlchemySketch
             ingredientCount={ingredients.length}
-            recipeName={generatedRecipes[0]?.name}
+            recipeCount={generatedRecipes.length}
           />
 
           {/* Mobile: Buttons below title */}
